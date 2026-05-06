@@ -1,90 +1,19 @@
 'use client'
 
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import Image from 'next/image'
 import Link from 'next/link'
 import type { Opera } from '@/types/db'
+import ArtworkCard from '@/components/artwork/ArtworkCard'
 
-// Alias di compatibilità con le pagine che importano OperaConSrc
 export type OperaConSrc = Opera
-
-const disponibilitaConfig: Record<string, { label: string; classes: string }> = {
-  disponibile:    { label: 'Disponibile',   classes: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
-  venduta:        { label: 'Venduta',        classes: 'text-rose-600 bg-rose-50 border-rose-200' },
-  riservata:      { label: 'Riservata',      classes: 'text-amber-700 bg-amber-50 border-amber-200' },
-  non_in_vendita: { label: 'Non in vendita', classes: 'text-charcoal/60 bg-sand border-black/10' },
-}
-
-function CardBase({
-  opera,
-  ratio = '3/4',
-  titleSize = 'text-xl',
-}: {
-  opera: Opera
-  ratio?: string
-  titleSize?: string
-}) {
-  const imageUrl = opera.immagini[0] ?? null
-  const dispo = disponibilitaConfig[opera.disponibilita] ?? disponibilitaConfig.non_in_vendita
-
-  return (
-    <Link href={`/opere/${opera.slug}`} className="group flex flex-col">
-      <div
-        className="relative overflow-hidden rounded-2xl bg-[#ede6dc] shadow-[0_4px_20px_rgba(28,16,8,0.07)] transition-shadow duration-500 group-hover:shadow-[0_16px_48px_rgba(28,16,8,0.15)]"
-        style={{ aspectRatio: ratio }}
-      >
-        {imageUrl ? (
-          <Image
-            src={imageUrl}
-            alt={opera.titolo}
-            fill
-            className="object-contain p-4 transition-transform duration-700 group-hover:scale-[1.04]"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="font-sans text-xs text-charcoal/25">Opera</span>
-          </div>
-        )}
-        <div className="absolute top-3 left-3">
-          <span className={`inline-block rounded-full border px-2.5 py-0.5 font-sans text-[0.55rem] font-semibold uppercase tracking-[0.14em] ${dispo.classes}`}>
-            {dispo.label}
-          </span>
-        </div>
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          <div className="rounded-full bg-coral px-5 py-2 shadow-lg">
-            <span className="font-sans text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-cream">
-              Scopri →
-            </span>
-          </div>
-        </div>
-      </div>
-      <div className="px-1 pt-3 pb-1">
-        <h3 className={`font-display font-bold text-ink leading-tight transition-colors duration-300 group-hover:text-coral ${titleSize}`}>
-          {opera.titolo}
-        </h3>
-        <div className="mt-1 flex flex-wrap items-center gap-x-2">
-          {opera.tecnica && (
-            <span className="font-sans text-[0.57rem] font-semibold uppercase tracking-[0.18em] text-terracotta">
-              {opera.tecnica}
-            </span>
-          )}
-          {opera.anno && (
-            <span className="font-sans text-[0.57rem] text-charcoal/40">{opera.anno}</span>
-          )}
-        </div>
-      </div>
-    </Link>
-  )
-}
 
 function EditorialGrid({ opere }: { opere: Opera[] }) {
   if (opere.length === 0) return null
   return (
     <div className="grid grid-cols-2 gap-5 sm:gap-6 md:grid-cols-3 lg:grid-cols-4 lg:gap-8">
       {opere.map((opera) => (
-        <CardBase key={opera.id} opera={opera} ratio="3/4" titleSize="text-base" />
+        <ArtworkCard key={opera.id} opera={opera} ratio="3/4" titleSize="text-base" />
       ))}
     </div>
   )
