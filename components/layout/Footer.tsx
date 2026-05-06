@@ -1,174 +1,127 @@
-import Link from "next/link";
+import Link from 'next/link'
+import Image from 'next/image'
 
-const navLinks = [
-  { href: "/galleria", label: "Galleria" },
-  { href: "/chi-sono", label: "Chi è Salvo" },
-  { href: "/ordina", label: "Ordina" },
-];
+const exploreLinks = [
+  { href: '/opere', label: 'Galleria' },
+  { href: '/artista', label: 'Artista' },
+  { href: '/contatti', label: 'Contatti' },
+]
+
+function InstagramIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+    </svg>
+  )
+}
+
+function FacebookIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+    </svg>
+  )
+}
 
 export default function Footer() {
   return (
-    <footer
-      style={{
-        background: "#0C0A07",
-        padding: "4rem clamp(1.5rem, 5vw, 4rem) 2.5rem",
-      }}
-    >
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-          gap: "2.5rem",
-          marginBottom: "3rem",
-        }}
-      >
-        {/* Brand */}
-        <div>
-          <span
-            style={{
-              fontFamily: "var(--font-cormorant)",
-              fontSize: "1.3rem",
-              fontWeight: 300,
-              color: "rgba(237,232,224,0.88)",
-              letterSpacing: "0.07em",
-              display: "block",
-              marginBottom: "0.4rem",
-            }}
-          >
-            Salvo Moncada
-          </span>
-          <span
-            style={{
-              fontFamily: "var(--font-inter)",
-              fontSize: "0.6rem",
-              letterSpacing: "0.28em",
-              textTransform: "uppercase",
-              color: "rgba(196,120,58,0.6)",
-            }}
-          >
-            Tegole in Maiolica · Sicilia
-          </span>
-          <p
-            style={{
-              fontFamily: "var(--font-inter)",
-              fontSize: "0.78rem",
-              color: "rgba(237,232,224,0.35)",
-              lineHeight: 1.7,
-              marginTop: "1rem",
-              maxWidth: "280px",
-            }}
-          >
-            Scene di vita quotidiana siciliana dipinte a mano su maiolica.
-            Ogni tegola è un pezzo unico.
-          </p>
-        </div>
+    <footer className="bg-espresso">
+      {/* Corpo principale */}
+      <div className="container-site border-t border-white/6 py-16 md:py-20">
+        <div className="grid grid-cols-1 gap-12 md:grid-cols-[1.6fr_1fr_1fr] md:gap-16">
 
-        {/* Nav */}
-        <div>
-          <p
-            style={{
-              fontFamily: "var(--font-inter)",
-              fontSize: "0.6rem",
-              letterSpacing: "0.22em",
-              textTransform: "uppercase",
-              color: "rgba(237,232,224,0.25)",
-              marginBottom: "1.2rem",
-            }}
-          >
-            Navigazione
-          </p>
-          <nav style={{ display: "flex", flexDirection: "column", gap: "0.8rem" }}>
-            {navLinks.map(({ href, label }) => (
-              <Link
-                key={href}
-                href={href}
-                style={{
-                  fontFamily: "var(--font-inter)",
-                  fontSize: "0.8rem",
-                  color: "rgba(237,232,224,0.45)",
-                  textDecoration: "none",
-                  transition: "color 0.2s",
-                  letterSpacing: "0.03em",
-                }}
-              >
-                {label}
-              </Link>
-            ))}
-          </nav>
-        </div>
+          {/* Brand */}
+          <div className="flex flex-col gap-5">
+            <Link href="/" className="flex items-center gap-3 transition-opacity duration-300 hover:opacity-70">
+              <Image src="/logo.png" alt="Logo Salvo Moncada" width={44} height={44} className="h-auto w-9 object-contain" />
+              <div>
+                <p className="font-display text-lg font-black uppercase tracking-[0.06em] text-cream">
+                  Salvo Moncada
+                </p>
+                <p className="font-script text-sm text-gold/80 leading-none mt-0.5">
+                  Arte su Tegola · Sicilia
+                </p>
+              </div>
+            </Link>
 
-        {/* Contatti */}
-        <div>
-          <p
-            style={{
-              fontFamily: "var(--font-inter)",
-              fontSize: "0.6rem",
-              letterSpacing: "0.22em",
-              textTransform: "uppercase",
-              color: "rgba(237,232,224,0.25)",
-              marginBottom: "1.2rem",
-            }}
-          >
-            Contatti
-          </p>
-          <a
-            href="mailto:info@salvomoncada.it"
-            style={{
-              fontFamily: "var(--font-inter)",
-              fontSize: "0.8rem",
-              color: "rgba(196,120,58,0.7)",
-              textDecoration: "none",
-              display: "block",
-              marginBottom: "0.6rem",
-            }}
-          >
-            info@salvomoncada.it
-          </a>
-          <p
-            style={{
-              fontFamily: "var(--font-inter)",
-              fontSize: "0.75rem",
-              color: "rgba(237,232,224,0.3)",
-            }}
-          >
-            Instagram
-          </p>
+            <p className="max-w-[260px] font-body text-sm leading-relaxed text-ivory/45">
+              Tegole antiche trasformate in storie di vita siciliana. Ogni opera è unica, dipinta a mano.
+            </p>
+
+            <div className="flex items-center gap-4">
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram"
+                className="text-ivory/35 transition-colors duration-200 hover:text-gold">
+                <InstagramIcon />
+              </a>
+              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook"
+                className="text-ivory/35 transition-colors duration-200 hover:text-gold">
+                <FacebookIcon />
+              </a>
+            </div>
+          </div>
+
+          {/* Esplora */}
+          <div>
+            <p className="mb-5 font-sans text-[0.58rem] font-semibold uppercase tracking-[0.3em] text-gold/70">
+              Esplora
+            </p>
+            <ul className="flex flex-col gap-3">
+              {exploreLinks.map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href}
+                    className="font-sans text-sm text-ivory/45 transition-colors duration-200 hover:text-ivory">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Contatti */}
+          <div>
+            <p className="mb-5 font-sans text-[0.58rem] font-semibold uppercase tracking-[0.3em] text-gold/70">
+              Contatti
+            </p>
+            <ul className="flex flex-col gap-3">
+              <li>
+                <a href="mailto:info@salvomoncada.it"
+                  className="font-sans text-sm text-ivory/45 transition-colors duration-200 hover:text-ivory">
+                  info@salvomoncada.it
+                </a>
+              </li>
+              <li>
+                <span className="font-sans text-sm text-ivory/35">Sicilia, Italia</span>
+              </li>
+              <li>
+                <a href="https://instagram.com/salvomoncada" target="_blank" rel="noopener noreferrer"
+                  className="font-sans text-sm text-ivory/45 transition-colors duration-200 hover:text-gold">
+                  @salvomoncada
+                </a>
+              </li>
+            </ul>
+          </div>
+
         </div>
       </div>
 
       {/* Bottom bar */}
-      <div
-        style={{
-          borderTop: "1px solid rgba(237,232,224,0.07)",
-          paddingTop: "1.5rem",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "0.5rem",
-        }}
-      >
-        <p
-          style={{
-            fontFamily: "var(--font-inter)",
-            fontSize: "0.65rem",
-            color: "rgba(237,232,224,0.18)",
-            letterSpacing: "0.05em",
-          }}
-        >
-          © {new Date().getFullYear()} Salvo Moncada. Tutti i diritti riservati.
-        </p>
-        <p
-          style={{
-            fontFamily: "var(--font-inter)",
-            fontSize: "0.65rem",
-            color: "rgba(237,232,224,0.18)",
-            letterSpacing: "0.05em",
-          }}
-        >
-          Fatto a mano in Sicilia
-        </p>
+      <div className="container-site border-t border-white/6 py-5">
+        <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
+          <p className="font-sans text-[0.62rem] text-ivory/25">
+            © {new Date().getFullYear()} Salvo Moncada · Tutti i diritti riservati
+          </p>
+          <div className="flex items-center gap-5">
+            <Link href="/privacy-policy" className="font-sans text-[0.62rem] text-ivory/25 transition-colors duration-200 hover:text-ivory/60">
+              Privacy Policy
+            </Link>
+            <Link href="/cookie-policy" className="font-sans text-[0.62rem] text-ivory/25 transition-colors duration-200 hover:text-ivory/60">
+              Cookie Policy
+            </Link>
+          </div>
+        </div>
       </div>
     </footer>
-  );
+  )
 }
