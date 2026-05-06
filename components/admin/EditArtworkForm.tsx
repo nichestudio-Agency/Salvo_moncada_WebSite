@@ -4,7 +4,6 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { updateArtwork } from "@/lib/actions";
 import type { Opera, Categoria } from "@/types/db";
-import Link from "next/link";
 
 const inputStyle: React.CSSProperties = {
   width: "100%", background: "#FFFFFF", border: "1px solid rgba(26,21,16,0.15)",
