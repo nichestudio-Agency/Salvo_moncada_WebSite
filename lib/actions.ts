@@ -1,92 +1,82 @@
-"use server";
+"use server"
 
-import crypto from "crypto";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
-import { readArtworks, writeArtworks, readOrders, writeOrders } from "./data";
-import type { Artwork, ArtworkCategory } from "./artworks";
+import crypto from "crypto"
+import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
+import { revalidatePath } from "next/cache"
+import {
+  insertOpera, updateOpera, deleteOpera, getOpere,
+  insertOrdine, updateOrdineStatus, deleteOrdine,
+  uploadImmagine,
+} from "@/lib/supabase/db"
+import type { Categoria, Disponibilita } from "@/types/db"
 
-// ─── Auth ─────────────────────────────────────────────────────────────────────
+// ── Auth ─────────────────────────────────────────────────────────────────────
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "salvo2024";
-const COOKIE_NAME = "admin_session";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "salvo2024"
+const COOKIE_NAME    = "admin_session"
 
 function hashPassword(pw: string) {
-  return crypto.createHash("sha256").update(pw).digest("hex");
+  return crypto.createHash("sha256").update(pw).digest("hex")
 }
 
 export async function adminLogin(
-  _prevState: { error?: string } | null,
+  _prev: { error?: string } | null,
   formData: FormData
 ): Promise<{ error?: string }> {
-  const password = formData.get("password") as string;
+  const password = formData.get("password") as string
   if (!password || hashPassword(password) !== hashPassword(ADMIN_PASSWORD)) {
-    return { error: "Password errata" };
+    return { error: "Password errata" }
   }
-  const cookieStore = await cookies();
-  cookieStore.set(COOKIE_NAME, hashPassword(password), {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7,
-  });
-  redirect("/admin");
+  const store = await cookies()
+  store.set(COOKIE_NAME, hashPassword(password), {
+    httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 7,
+  })
+  redirect("/admin")
 }
 
 export async function adminLogout() {
-  const cookieStore = await cookies();
-  cookieStore.delete(COOKIE_NAME);
-  redirect("/admin/login");
+  const store = await cookies()
+  store.delete(COOKIE_NAME)
+  redirect("/admin/login")
 }
 
-// ─── Orders ───────────────────────────────────────────────────────────────────
+// ── Ordini ───────────────────────────────────────────────────────────────────
 
 export async function createOrder(
-  _prevState: { success?: boolean; error?: string } | null,
+  _prev: { success?: boolean; error?: string } | null,
   formData: FormData
 ): Promise<{ success?: boolean; error?: string }> {
-  const nome = (formData.get("nome") as string)?.trim();
-  const email = (formData.get("email") as string)?.trim();
-  const scena = (formData.get("scena") as string)?.trim();
+  const nome  = (formData.get("nome")  as string)?.trim()
+  const email = (formData.get("email") as string)?.trim()
+  const scena = (formData.get("scena") as string)?.trim()
+  if (!nome || !email || !scena) return { error: "Compila tutti i campi obbligatori." }
 
-  if (!nome || !email || !scena) {
-    return { error: "Compila tutti i campi obbligatori." };
+  try {
+    await insertOrdine({
+      nome, email, scena,
+      dimensione: (formData.get("dimensione") as string) || null,
+      budget:     (formData.get("budget")     as string) || null,
+      messaggio:  (formData.get("messaggio")  as string)?.trim() || null,
+      status: "nuovo",
+    })
+    return { success: true }
+  } catch {
+    return { error: "Errore nel salvataggio. Riprova." }
   }
-
-  const orders = await readOrders();
-  orders.push({
-    id: crypto.randomUUID(),
-    nome,
-    email,
-    scena,
-    dimensione: (formData.get("dimensione") as string) || undefined,
-    budget: (formData.get("budget") as string) || undefined,
-    messaggio: (formData.get("messaggio") as string)?.trim() || undefined,
-    status: "nuovo",
-    createdAt: new Date().toISOString(),
-  });
-  await writeOrders(orders);
-  return { success: true };
 }
 
 export async function updateOrderStatus(id: string, status: "nuovo" | "in-lavorazione" | "completato") {
-  const orders = await readOrders();
-  const idx = orders.findIndex((o) => o.id === id);
-  if (idx !== -1) {
-    orders[idx].status = status;
-    await writeOrders(orders);
-  }
-  revalidatePath("/admin/ordini");
+  await updateOrdineStatus(id, status)
+  revalidatePath("/admin/ordini")
 }
 
 export async function deleteOrder(id: string) {
-  const orders = await readOrders();
-  await writeOrders(orders.filter((o) => o.id !== id));
-  revalidatePath("/admin/ordini");
+  await deleteOrdine(id)
+  revalidatePath("/admin/ordini")
 }
 
-// ─── Artworks ─────────────────────────────────────────────────────────────────
+// ── Opere ────────────────────────────────────────────────────────────────────
 
 function slugify(str: string) {
   return str
@@ -94,80 +84,92 @@ function slugify(str: string) {
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
+    .replace(/^-|-$/g, "")
 }
 
 export async function createArtwork(
-  _prevState: { error?: string } | null,
+  _prev: { error?: string } | null,
   formData: FormData
 ): Promise<{ error?: string }> {
-  const title = (formData.get("title") as string)?.trim();
-  if (!title) return { error: "Il titolo è obbligatorio." };
+  const titolo = (formData.get("titolo") as string)?.trim()
+  if (!titolo) return { error: "Il titolo è obbligatorio." }
 
-  const artworks = await readArtworks();
-  const slug = slugify(title);
+  const slug = slugify(titolo)
 
-  if (artworks.find((a) => a.slug === slug)) {
-    return { error: "Esiste già un'opera con questo titolo (slug duplicato)." };
+  // Gestione immagine: upload file oppure URL manuale
+  let immagineUrl = (formData.get("immagine_url") as string)?.trim() || ""
+  const file = formData.get("immagine_file") as File | null
+  if (file && file.size > 0) {
+    const uploaded = await uploadImmagine(file, slug)
+    if (uploaded) immagineUrl = uploaded
   }
 
-  const priceRaw = formData.get("price") as string;
-  const artwork: Artwork = {
-    slug,
-    title,
-    subtitle: (formData.get("subtitle") as string)?.trim() ?? "",
-    description: (formData.get("description") as string)?.trim() ?? "",
-    year: parseInt(formData.get("year") as string) || new Date().getFullYear(),
-    dimensions: (formData.get("dimensions") as string)?.trim() ?? "",
-    technique: (formData.get("technique") as string)?.trim() ?? "",
-    category: (formData.get("category") as ArtworkCategory) ?? "paesaggio",
-    available: formData.get("available") === "true",
-    price: priceRaw ? parseInt(priceRaw) : undefined,
-    images: [(formData.get("image") as string)?.trim() || "/images/artworks/hero-tile.jpg"],
-  };
+  try {
+    await insertOpera({
+      slug,
+      titolo,
+      sottotitolo:  (formData.get("sottotitolo") as string)?.trim() ?? "",
+      descrizione:  (formData.get("descrizione") as string)?.trim() ?? "",
+      anno:         parseInt(formData.get("anno") as string) || null,
+      dimensioni:   (formData.get("dimensioni")  as string)?.trim() ?? "",
+      tecnica:      (formData.get("tecnica")     as string)?.trim() ?? "",
+      categoria:    ((formData.get("categoria") as string) ?? "paesaggio") as Categoria,
+      disponibilita: ((formData.get("disponibilita") as string) ?? "disponibile") as Disponibilita,
+      prezzo:       (formData.get("prezzo") as string) ? parseInt(formData.get("prezzo") as string) : null,
+      immagini:     immagineUrl ? [immagineUrl] : [],
+      in_evidenza:  formData.get("in_evidenza") === "true",
+    })
+  } catch (e: unknown) {
+    if (e instanceof Error && e.message.includes("duplicate")) {
+      return { error: "Esiste già un'opera con questo titolo (slug duplicato)." }
+    }
+    return { error: "Errore nel salvataggio. Riprova." }
+  }
 
-  artworks.push(artwork);
-  await writeArtworks(artworks);
-  revalidatePath("/galleria");
-  revalidatePath("/");
-  redirect("/admin/prodotti");
+  revalidatePath("/opere")
+  revalidatePath("/")
+  redirect("/admin/prodotti")
 }
 
 export async function updateArtwork(
   slug: string,
-  _prevState: { error?: string } | null,
+  _prev: { error?: string } | null,
   formData: FormData
 ): Promise<{ error?: string }> {
-  const artworks = await readArtworks();
-  const idx = artworks.findIndex((a) => a.slug === slug);
-  if (idx === -1) return { error: "Opera non trovata." };
+  let immagineUrl = (formData.get("immagine_url") as string)?.trim() || ""
+  const file = formData.get("immagine_file") as File | null
+  if (file && file.size > 0) {
+    const uploaded = await uploadImmagine(file, slug)
+    if (uploaded) immagineUrl = uploaded
+  }
 
-  const priceRaw = formData.get("price") as string;
-  artworks[idx] = {
-    ...artworks[idx],
-    title: (formData.get("title") as string)?.trim() ?? artworks[idx].title,
-    subtitle: (formData.get("subtitle") as string)?.trim() ?? "",
-    description: (formData.get("description") as string)?.trim() ?? "",
-    year: parseInt(formData.get("year") as string) || artworks[idx].year,
-    dimensions: (formData.get("dimensions") as string)?.trim() ?? "",
-    technique: (formData.get("technique") as string)?.trim() ?? "",
-    category: (formData.get("category") as ArtworkCategory) ?? artworks[idx].category,
-    available: formData.get("available") === "true",
-    price: priceRaw ? parseInt(priceRaw) : undefined,
-    images: [(formData.get("image") as string)?.trim() || artworks[idx].images[0]],
-  };
+  try {
+    await updateOpera(slug, {
+      titolo:       (formData.get("titolo")       as string)?.trim(),
+      sottotitolo:  (formData.get("sottotitolo")  as string)?.trim() ?? "",
+      descrizione:  (formData.get("descrizione")  as string)?.trim() ?? "",
+      anno:         parseInt(formData.get("anno") as string) || null,
+      dimensioni:   (formData.get("dimensioni")   as string)?.trim() ?? "",
+      tecnica:      (formData.get("tecnica")      as string)?.trim() ?? "",
+      categoria:    ((formData.get("categoria") as string) ?? "paesaggio") as Categoria,
+      disponibilita: ((formData.get("disponibilita") as string) ?? "disponibile") as Disponibilita,
+      prezzo:       (formData.get("prezzo") as string) ? parseInt(formData.get("prezzo") as string) : null,
+      ...(immagineUrl ? { immagini: [immagineUrl] } : {}),
+      in_evidenza:  formData.get("in_evidenza") === "true",
+    })
+  } catch {
+    return { error: "Errore nel salvataggio. Riprova." }
+  }
 
-  await writeArtworks(artworks);
-  revalidatePath("/galleria");
-  revalidatePath(`/galleria/${slug}`);
-  revalidatePath("/");
-  redirect("/admin/prodotti");
+  revalidatePath("/opere")
+  revalidatePath(`/opere/${slug}`)
+  revalidatePath("/")
+  redirect("/admin/prodotti")
 }
 
 export async function deleteArtwork(slug: string) {
-  const artworks = await readArtworks();
-  await writeArtworks(artworks.filter((a) => a.slug !== slug));
-  revalidatePath("/galleria");
-  revalidatePath("/");
-  revalidatePath("/admin/prodotti");
+  await deleteOpera(slug)
+  revalidatePath("/opere")
+  revalidatePath("/")
+  revalidatePath("/admin/prodotti")
 }

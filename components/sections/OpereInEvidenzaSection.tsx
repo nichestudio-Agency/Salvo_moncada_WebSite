@@ -1,7 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { Opera } from '@/types/sanity'
-import { urlFor } from '@/lib/sanity/image'
+import type { Opera } from '@/types/db'
 import ScrollReveal from '@/components/ui/ScrollReveal'
 
 const disponibilitaLabel: Record<string, { label: string; color: string }> = {
@@ -12,13 +11,11 @@ const disponibilitaLabel: Record<string, { label: string; color: string }> = {
 }
 
 function ArtworkCard({ opera }: { opera: Opera }) {
-  const firstImage = opera.immaginiPrincipali?.[0]
-  const imageUrl = firstImage ? urlFor(firstImage).width(800).url() : null
+  const imageUrl = opera.immagini[0] ?? null
   const dispo = disponibilitaLabel[opera.disponibilita] ?? disponibilitaLabel.non_in_vendita
 
   return (
-    <Link href={`/opere/${opera.slug.current}`} className="group flex flex-col">
-      {/* Immagine */}
+    <Link href={`/opere/${opera.slug}`} className="group flex flex-col">
       <div
         className="relative overflow-hidden rounded-2xl bg-[#ede6dc] shadow-[0_4px_24px_rgba(28,16,8,0.07)] transition-shadow duration-500 group-hover:shadow-[0_12px_40px_rgba(28,16,8,0.14)]"
         style={{ aspectRatio: '3/4' }}
@@ -36,15 +33,11 @@ function ArtworkCard({ opera }: { opera: Opera }) {
             <span className="font-sans text-xs text-charcoal/30">Opera</span>
           </div>
         )}
-
-        {/* Badge disponibilità */}
         <div className="absolute top-4 left-4">
           <span className={`inline-block rounded-full border px-3 py-1 font-sans text-[0.58rem] font-semibold uppercase tracking-[0.16em] ${dispo.color}`}>
             {dispo.label}
           </span>
         </div>
-
-        {/* Hover overlay con freccia */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
           <div className="rounded-full bg-coral px-5 py-2.5 shadow-lg">
             <span className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-cream">
@@ -53,21 +46,17 @@ function ArtworkCard({ opera }: { opera: Opera }) {
           </div>
         </div>
       </div>
-
-      {/* Info */}
       <div className="pt-4 px-1">
         <h3 className="font-display text-[1.2rem] font-bold text-ink leading-tight transition-colors duration-300 group-hover:text-coral">
           {opera.titolo}
         </h3>
         <div className="mt-1.5 flex items-center gap-2 flex-wrap">
-          {opera.serie && (
+          {opera.tecnica && (
             <span className="font-sans text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-terracotta">
-              {opera.serie.nome}
+              {opera.tecnica}
             </span>
           )}
-          {opera.serie && opera.anno && (
-            <span className="text-charcoal/25 text-xs">·</span>
-          )}
+          {opera.tecnica && opera.anno && <span className="text-charcoal/25 text-xs">·</span>}
           {opera.anno && (
             <span className="font-sans text-[0.6rem] font-medium uppercase tracking-[0.16em] text-charcoal/45">
               {opera.anno}
@@ -76,9 +65,7 @@ function ArtworkCard({ opera }: { opera: Opera }) {
           {opera.dimensioni && (
             <>
               <span className="text-charcoal/25 text-xs">·</span>
-              <span className="font-sans text-[0.6rem] text-charcoal/40">
-                {opera.dimensioni.larghezza}×{opera.dimensioni.altezza} cm
-              </span>
+              <span className="font-sans text-[0.6rem] text-charcoal/40">{opera.dimensioni}</span>
             </>
           )}
         </div>
@@ -88,25 +75,21 @@ function ArtworkCard({ opera }: { opera: Opera }) {
 }
 
 const staticOpere = [
-  { src: '/opere/opera-01.jpg', titolo: 'Scena di Paese', anno: 2024, serie: 'Vita Siciliana' },
-  { src: '/opere/opera-03.jpg', titolo: 'La Raccolta', anno: 2024, serie: 'Tradizioni' },
-  { src: '/opere/opera-07.jpg', titolo: 'Vita Quotidiana', anno: 2023, serie: 'Scene Popolari' },
+  { titolo: 'Scena di Paese',   anno: 2024, tecnica: 'Maiolica dipinta a mano' },
+  { titolo: 'La Raccolta',       anno: 2024, tecnica: 'Maiolica dipinta a mano' },
+  { titolo: 'Vita Quotidiana',   anno: 2023, tecnica: 'Maiolica dipinta a mano' },
 ]
 
-function StaticCard({ src, titolo, anno, serie }: typeof staticOpere[0]) {
+function StaticCard({ titolo, anno, tecnica }: typeof staticOpere[0]) {
   return (
     <Link href="/opere" className="group flex flex-col">
       <div
         className="relative overflow-hidden rounded-2xl bg-[#ede6dc] shadow-[0_4px_24px_rgba(28,16,8,0.07)] transition-shadow duration-500 group-hover:shadow-[0_12px_40px_rgba(28,16,8,0.14)]"
         style={{ aspectRatio: '3/4' }}
       >
-        <Image
-          src={src}
-          alt={titolo}
-          fill
-          className="object-contain p-5 transition-transform duration-700 group-hover:scale-[1.04]"
-          sizes="(max-width: 768px) 100vw, 33vw"
-        />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="font-display text-[3rem] font-black text-charcoal/8">✦</span>
+        </div>
         <div className="absolute top-4 left-4">
           <span className="inline-block rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-sans text-[0.58rem] font-semibold uppercase tracking-[0.16em] text-emerald-700">
             Disponibile
@@ -125,7 +108,7 @@ function StaticCard({ src, titolo, anno, serie }: typeof staticOpere[0]) {
           {titolo}
         </h3>
         <div className="mt-1.5 flex items-center gap-2">
-          <span className="font-sans text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-terracotta">{serie}</span>
+          <span className="font-sans text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-terracotta">{tecnica}</span>
           <span className="text-charcoal/25 text-xs">·</span>
           <span className="font-sans text-[0.6rem] font-medium uppercase tracking-[0.16em] text-charcoal/45">{anno}</span>
         </div>
@@ -140,8 +123,6 @@ export default function OpereInEvidenzaSection({ opere }: { opere: Opera[] }) {
   return (
     <section className="bg-cream py-20 md:py-28">
       <div className="container-site">
-
-        {/* Header */}
         <ScrollReveal direction="up" className="mb-14 md:mb-18">
           <div className="flex items-end justify-between gap-6 border-b border-black/8 pb-8">
             <div>
@@ -164,23 +145,21 @@ export default function OpereInEvidenzaSection({ opere }: { opere: Opera[] }) {
           </div>
         </ScrollReveal>
 
-        {/* Griglia 3 colonne */}
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-10">
           {isEmpty
             ? staticOpere.map((opera, i) => (
-                <ScrollReveal key={opera.src} direction="up" delay={i * 0.12}>
+                <ScrollReveal key={opera.titolo} direction="up" delay={i * 0.12}>
                   <StaticCard {...opera} />
                 </ScrollReveal>
               ))
             : opere.map((opera, i) => (
-                <ScrollReveal key={opera._id} direction="up" delay={i * 0.12}>
+                <ScrollReveal key={opera.id} direction="up" delay={i * 0.12}>
                   <ArtworkCard opera={opera} />
                 </ScrollReveal>
               ))
           }
         </div>
 
-        {/* CTA mobile */}
         <div className="mt-12 flex justify-center md:hidden">
           <Link
             href="/opere"
@@ -189,7 +168,6 @@ export default function OpereInEvidenzaSection({ opere }: { opere: Opera[] }) {
             Vedi tutte le opere →
           </Link>
         </div>
-
       </div>
     </section>
   )
