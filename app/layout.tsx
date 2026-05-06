@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Inter, Dancing_Script } from "next/font/google";
 import "./globals.css";
+import Cursor from "@/components/ui/Cursor";
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
   weight: ["300", "400", "600", "700"],
@@ -39,6 +40,7 @@ export default function RootLayout({
       className={`${cormorant.variable} ${inter.variable} ${dancing.variable} h-full`}
     >
       <body className="min-h-full flex flex-col antialiased">
+        <Cursor />
         {children}
       </body>
     </html>
