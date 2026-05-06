@@ -74,51 +74,9 @@ function ArtworkCard({ opera }: { opera: Opera }) {
   )
 }
 
-const staticOpere = [
-  { titolo: 'Scena di Paese',   anno: 2024, tecnica: 'Maiolica dipinta a mano' },
-  { titolo: 'La Raccolta',       anno: 2024, tecnica: 'Maiolica dipinta a mano' },
-  { titolo: 'Vita Quotidiana',   anno: 2023, tecnica: 'Maiolica dipinta a mano' },
-]
-
-function StaticCard({ titolo, anno, tecnica }: typeof staticOpere[0]) {
-  return (
-    <Link href="/opere" className="group flex flex-col">
-      <div
-        className="relative overflow-hidden rounded-2xl bg-[#ede6dc] shadow-[0_4px_24px_rgba(28,16,8,0.07)] transition-shadow duration-500 group-hover:shadow-[0_12px_40px_rgba(28,16,8,0.14)]"
-        style={{ aspectRatio: '3/4' }}
-      >
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="font-display text-[3rem] font-black text-charcoal/8">✦</span>
-        </div>
-        <div className="absolute top-4 left-4">
-          <span className="inline-block rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-sans text-[0.58rem] font-semibold uppercase tracking-[0.16em] text-emerald-700">
-            Disponibile
-          </span>
-        </div>
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          <div className="rounded-full bg-coral px-5 py-2.5 shadow-lg">
-            <span className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-cream">
-              Scopri →
-            </span>
-          </div>
-        </div>
-      </div>
-      <div className="pt-4 px-1">
-        <h3 className="font-display text-[1.2rem] font-bold text-ink leading-tight transition-colors duration-300 group-hover:text-coral">
-          {titolo}
-        </h3>
-        <div className="mt-1.5 flex items-center gap-2">
-          <span className="font-sans text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-terracotta">{tecnica}</span>
-          <span className="text-charcoal/25 text-xs">·</span>
-          <span className="font-sans text-[0.6rem] font-medium uppercase tracking-[0.16em] text-charcoal/45">{anno}</span>
-        </div>
-      </div>
-    </Link>
-  )
-}
 
 export default function OpereInEvidenzaSection({ opere }: { opere: Opera[] }) {
-  const isEmpty = !opere || opere.length === 0
+  if (!opere || opere.length === 0) return null
 
   return (
     <section className="bg-cream py-20 md:py-28">
@@ -146,18 +104,11 @@ export default function OpereInEvidenzaSection({ opere }: { opere: Opera[] }) {
         </ScrollReveal>
 
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-10">
-          {isEmpty
-            ? staticOpere.map((opera, i) => (
-                <ScrollReveal key={opera.titolo} direction="up" delay={i * 0.12}>
-                  <StaticCard {...opera} />
-                </ScrollReveal>
-              ))
-            : opere.map((opera, i) => (
-                <ScrollReveal key={opera.id} direction="up" delay={i * 0.12}>
-                  <ArtworkCard opera={opera} />
-                </ScrollReveal>
-              ))
-          }
+          {opere.map((opera, i) => (
+            <ScrollReveal key={opera.id} direction="up" delay={i * 0.12}>
+              <ArtworkCard opera={opera} />
+            </ScrollReveal>
+          ))}
         </div>
 
         <div className="mt-12 flex justify-center md:hidden">

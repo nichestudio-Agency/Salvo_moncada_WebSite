@@ -1,93 +1,83 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 export default function Cursor() {
-  const dotRef = useRef<HTMLDivElement>(null);
-  const ringRef = useRef<HTMLDivElement>(null);
-  const [isHovering, setIsHovering] = useState(false);
-  const pos = useRef({ x: -100, y: -100 });
-  const ring = useRef({ x: -100, y: -100 });
-  const rafRef = useRef<number>(0);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const dot = dotRef.current;
-    const ringEl = ringRef.current;
-    if (!dot || !ringEl) return;
+    const el = ref.current;
+    if (!el) return;
+
+    // Tutto gestito via DOM diretto — zero lag, zero re-render React
+    let hovering = false;
+
+    const setVisual = () => {
+      if (hovering) {
+        el.style.width = "22px";
+        el.style.height = "22px";
+        el.style.background = "#C85035";
+        el.style.border = "2px solid #C85035";
+      } else {
+        el.style.width = "10px";
+        el.style.height = "10px";
+        el.style.background = "transparent";
+        el.style.border = "1.5px solid rgba(200, 80, 53, 0.75)";
+      }
+    };
 
     const onMove = (e: MouseEvent) => {
-      pos.current = { x: e.clientX, y: e.clientY };
+      el.style.left = `${e.clientX}px`;
+      el.style.top = `${e.clientY}px`;
+      el.style.opacity = "1";
     };
 
-    const onEnter = () => setIsHovering(true);
-    const onLeave = () => setIsHovering(false);
+    const onEnter = () => { hovering = true; setVisual(); };
+    const onLeave = () => { hovering = false; setVisual(); };
+    const onHide  = () => { el.style.opacity = "0"; };
+    const onShow  = () => { el.style.opacity = "1"; };
 
     document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseleave", onHide);
+    document.addEventListener("mouseenter", onShow);
 
     const interactables = document.querySelectorAll("a, button, [role='button']");
-    interactables.forEach((el) => {
-      el.addEventListener("mouseenter", onEnter);
-      el.addEventListener("mouseleave", onLeave);
+    interactables.forEach((node) => {
+      node.addEventListener("mouseenter", onEnter);
+      node.addEventListener("mouseleave", onLeave);
     });
 
-    const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-
-    const animate = () => {
-      ring.current.x = lerp(ring.current.x, pos.current.x, 0.12);
-      ring.current.y = lerp(ring.current.y, pos.current.y, 0.12);
-
-      if (dot) {
-        dot.style.transform = `translate(${pos.current.x - 3}px, ${pos.current.y - 3}px)`;
-      }
-      if (ringEl) {
-        ringEl.style.transform = `translate(${ring.current.x - 20}px, ${ring.current.y - 20}px)`;
-      }
-
-      rafRef.current = requestAnimationFrame(animate);
-    };
-
-    rafRef.current = requestAnimationFrame(animate);
-
     return () => {
-      cancelAnimationFrame(rafRef.current);
       document.removeEventListener("mousemove", onMove);
-      interactables.forEach((el) => {
-        el.removeEventListener("mouseenter", onEnter);
-        el.removeEventListener("mouseleave", onLeave);
+      document.removeEventListener("mouseleave", onHide);
+      document.removeEventListener("mouseenter", onShow);
+      interactables.forEach((node) => {
+        node.removeEventListener("mouseenter", onEnter);
+        node.removeEventListener("mouseleave", onLeave);
       });
     };
   }, []);
 
   return (
-    <>
-      {/* Punto centrale */}
-      <div
-        ref={dotRef}
-        className="fixed top-0 left-0 z-[10000] pointer-events-none"
-        style={{
-          width: 6,
-          height: 6,
-          borderRadius: "50%",
-          backgroundColor: "#C4783C",
-          willChange: "transform",
-        }}
-      />
-      {/* Anello esterno con ritardo */}
-      <div
-        ref={ringRef}
-        className="fixed top-0 left-0 z-[10000] pointer-events-none transition-all duration-200"
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: "50%",
-          border: `1.5px solid ${isHovering ? "rgba(196,120,58,0.8)" : "rgba(196,120,58,0.35)"}`,
-          boxShadow: isHovering
-            ? "0 0 20px 4px rgba(196,120,58,0.25)"
-            : "none",
-          transform: isHovering ? "scale(1.4)" : "scale(1)",
-          willChange: "transform",
-        }}
-      />
-    </>
+    <div
+      ref={ref}
+      style={{
+        position: "fixed",
+        pointerEvents: "none",
+        zIndex: 10000,
+        left: -100,
+        top: -100,
+        opacity: 0,
+        width: 10,
+        height: 10,
+        transform: "translate(-50%, -50%)",
+        borderRadius: "50%",
+        background: "transparent",
+        border: "1.5px solid rgba(200, 80, 53, 0.75)",
+        transition:
+          "width 0.18s ease, height 0.18s ease, background 0.18s ease, border 0.18s ease, opacity 0.25s ease",
+        willChange: "left, top",
+      }}
+    />
   );
 }
