@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Inter } from "next/font/google";
+import { Cormorant_Garamond, Inter, Dancing_Script } from "next/font/google";
 import "./globals.css";
-import ClientShell from "@/components/layout/ClientShell";
-import Footer from "@/components/layout/Footer";
+import Cursor from "@/components/ui/Cursor";
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
@@ -17,10 +16,17 @@ const inter = Inter({
   display: "swap",
 });
 
+const dancing = Dancing_Script({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-dancing",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Salvo Moncada — Tegole in Maiolica",
   description:
-    "Arte siciliana: scene di vita quotidiana dipinte a mano su maiolica. Pescherie, fruttivendoli, vicoli e paesaggi. Opere uniche disponibili e su commissione.",
+    "Arte siciliana: scene di vita quotidiana dipinte a mano su maiolica. Opere uniche disponibili e su commissione.",
   keywords: ["tegole", "maiolica", "arte siciliana", "Salvo Moncada", "artigianato", "Catania"],
 };
 
@@ -32,13 +38,11 @@ export default function RootLayout({
   return (
     <html
       lang="it"
-      className={`${cormorant.variable} ${inter.variable} h-full`}
+      className={`${cormorant.variable} ${inter.variable} ${dancing.variable} h-full`}
     >
       <body className="min-h-full flex flex-col antialiased">
-        <ClientShell>
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </ClientShell>
+        <Cursor />
+        {children}
       </body>
     </html>
   );

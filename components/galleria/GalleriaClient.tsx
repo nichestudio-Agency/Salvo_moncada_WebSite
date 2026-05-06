@@ -182,7 +182,7 @@ export default function GalleriaClient({ opere, serie, totale }: {
   const [filtriAperti, setFiltriAperti]               = useState(false)
 
   const anniDisponibili = useMemo(
-    () => [...new Set(opere.map((op) => op.anno))].sort((a, b) => b - a),
+    () => [...new Set(opere.map((op) => op.anno).filter((a): a is number => a != null))].sort((a, b) => b - a),
     [opere]
   )
 
