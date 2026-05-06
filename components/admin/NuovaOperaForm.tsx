@@ -2,9 +2,8 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
-import { updateArtwork } from "@/lib/actions";
-import type { Opera, Categoria } from "@/types/db";
-import Link from "next/link";
+import { createArtwork } from "@/lib/actions";
+import type { Categoria } from "@/types/db";
 
 const inputStyle: React.CSSProperties = {
   width: "100%", background: "#FFFFFF", border: "1px solid rgba(26,21,16,0.15)",
@@ -16,9 +15,8 @@ const labelStyle: React.CSSProperties = {
   textTransform: "uppercase", color: "rgba(26,21,16,0.4)", display: "block", marginBottom: "0.4rem",
 };
 
-export default function EditArtworkForm({ opera, categorie }: { opera: Opera; categorie: Categoria[] }) {
-  const boundAction = updateArtwork.bind(null, opera.slug);
-  const [state, formAction, pending] = useActionState(boundAction, null);
+export default function NuovaOperaForm({ categorie }: { categorie: Categoria[] }) {
+  const [state, formAction, pending] = useActionState(createArtwork, null);
 
   return (
     <div style={{ maxWidth: 680 }}>
@@ -26,12 +24,9 @@ export default function EditArtworkForm({ opera, categorie }: { opera: Opera; ca
         <Link href="/admin/prodotti" style={{ fontFamily: "var(--font-inter)", fontSize: "0.65rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(26,21,16,0.35)", textDecoration: "none", display: "inline-block", marginBottom: "1rem" }}>
           ← Prodotti
         </Link>
-        <h1 style={{ fontFamily: "var(--font-cormorant)", fontSize: "2.2rem", fontWeight: 300, color: "#1A1510", marginBottom: "0.2rem" }}>
-          Modifica opera
+        <h1 style={{ fontFamily: "var(--font-cormorant)", fontSize: "2.2rem", fontWeight: 300, color: "#1A1510" }}>
+          Nuova opera
         </h1>
-        <p style={{ fontFamily: "var(--font-inter)", fontSize: "0.72rem", color: "rgba(26,21,16,0.35)" }}>
-          {opera.slug}
-        </p>
       </div>
 
       <form action={formAction} encType="multipart/form-data" style={{ display: "flex", flexDirection: "column", gap: "1.4rem" }}>
@@ -44,27 +39,27 @@ export default function EditArtworkForm({ opera, categorie }: { opera: Opera; ca
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
           <div style={{ gridColumn: "1 / -1" }}>
             <label style={labelStyle} htmlFor="titolo">Titolo *</label>
-            <input id="titolo" name="titolo" required defaultValue={opera.titolo} style={inputStyle} />
+            <input id="titolo" name="titolo" required style={inputStyle} placeholder="La Pescheria del Porto" />
           </div>
           <div style={{ gridColumn: "1 / -1" }}>
             <label style={labelStyle} htmlFor="sottotitolo">Sottotitolo</label>
-            <input id="sottotitolo" name="sottotitolo" defaultValue={opera.sottotitolo} style={inputStyle} />
+            <input id="sottotitolo" name="sottotitolo" style={inputStyle} placeholder="Voci e profumi all'alba" />
           </div>
           <div style={{ gridColumn: "1 / -1" }}>
             <label style={labelStyle} htmlFor="descrizione">Descrizione</label>
-            <textarea id="descrizione" name="descrizione" rows={4} defaultValue={opera.descrizione} style={{ ...inputStyle, resize: "vertical" }} />
+            <textarea id="descrizione" name="descrizione" rows={4} style={{ ...inputStyle, resize: "vertical" }} />
           </div>
           <div>
             <label style={labelStyle} htmlFor="anno">Anno</label>
-            <input id="anno" name="anno" type="number" defaultValue={opera.anno ?? ""} style={inputStyle} />
+            <input id="anno" name="anno" type="number" defaultValue={new Date().getFullYear()} style={inputStyle} />
           </div>
           <div>
             <label style={labelStyle} htmlFor="dimensioni">Dimensioni</label>
-            <input id="dimensioni" name="dimensioni" defaultValue={opera.dimensioni} style={inputStyle} />
+            <input id="dimensioni" name="dimensioni" style={inputStyle} placeholder="20×30 cm" />
           </div>
           <div style={{ gridColumn: "1 / -1" }}>
             <label style={labelStyle} htmlFor="tecnica">Tecnica</label>
-            <input id="tecnica" name="tecnica" defaultValue={opera.tecnica} style={inputStyle} />
+            <input id="tecnica" name="tecnica" style={inputStyle} placeholder="Maiolica dipinta a mano, smalto lucido" />
           </div>
           <div>
             <label style={labelStyle} htmlFor="categoria">
@@ -73,9 +68,9 @@ export default function EditArtworkForm({ opera, categorie }: { opera: Opera; ca
                 Gestisci →
               </Link>
             </label>
-            <select id="categoria" name="categoria" defaultValue={opera.categoria} style={{ ...inputStyle, appearance: "auto" }}>
+            <select id="categoria" name="categoria" style={{ ...inputStyle, appearance: "auto" }}>
               {categorie.length === 0 && (
-                <option value={opera.categoria}>{opera.categoria}</option>
+                <option value="paesaggio">Paesaggio (default)</option>
               )}
               {categorie.map((cat) => (
                 <option key={cat.id} value={cat.slug}>{cat.nome}</option>
@@ -84,11 +79,11 @@ export default function EditArtworkForm({ opera, categorie }: { opera: Opera; ca
           </div>
           <div>
             <label style={labelStyle} htmlFor="prezzo">Prezzo (€)</label>
-            <input id="prezzo" name="prezzo" type="number" min={0} defaultValue={opera.prezzo ?? ""} style={inputStyle} placeholder="Vuoto = nessun prezzo" />
+            <input id="prezzo" name="prezzo" type="number" min={0} style={inputStyle} placeholder="320" />
           </div>
           <div>
             <label style={labelStyle} htmlFor="disponibilita">Disponibilità</label>
-            <select id="disponibilita" name="disponibilita" defaultValue={opera.disponibilita} style={{ ...inputStyle, appearance: "auto" }}>
+            <select id="disponibilita" name="disponibilita" style={{ ...inputStyle, appearance: "auto" }}>
               <option value="disponibile">Disponibile</option>
               <option value="riservata">Riservata</option>
               <option value="venduta">Venduta</option>
@@ -97,24 +92,14 @@ export default function EditArtworkForm({ opera, categorie }: { opera: Opera; ca
           </div>
           <div>
             <label style={labelStyle} htmlFor="in_evidenza">In evidenza (homepage)</label>
-            <select id="in_evidenza" name="in_evidenza" defaultValue={String(opera.in_evidenza)} style={{ ...inputStyle, appearance: "auto" }}>
+            <select id="in_evidenza" name="in_evidenza" style={{ ...inputStyle, appearance: "auto" }}>
               <option value="false">No</option>
               <option value="true">Sì</option>
             </select>
           </div>
 
-          {/* Immagine attuale */}
-          {opera.immagini[0] && (
-            <div style={{ gridColumn: "1 / -1" }}>
-              <p style={labelStyle}>Immagine attuale</p>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={opera.immagini[0]} alt={opera.titolo} style={{ height: 120, objectFit: "contain", background: "#f0ebe4", padding: 8 }} />
-            </div>
-          )}
-
-          {/* Upload nuova immagine */}
           <div style={{ gridColumn: "1 / -1", borderTop: "1px solid rgba(26,21,16,0.08)", paddingTop: "1rem" }}>
-            <label style={labelStyle}>Sostituisci immagine</label>
+            <label style={labelStyle}>Immagine</label>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
               <div>
                 <label style={{ ...labelStyle, fontSize: "0.55rem", color: "rgba(26,21,16,0.3)" }} htmlFor="immagine_file">
@@ -126,7 +111,7 @@ export default function EditArtworkForm({ opera, categorie }: { opera: Opera; ca
                 <label style={{ ...labelStyle, fontSize: "0.55rem", color: "rgba(26,21,16,0.3)" }} htmlFor="immagine_url">
                   Oppure incolla un URL
                 </label>
-                <input id="immagine_url" name="immagine_url" defaultValue={opera.immagini[0] ?? ""} style={inputStyle} placeholder="https://..." />
+                <input id="immagine_url" name="immagine_url" style={inputStyle} placeholder="https://..." />
               </div>
             </div>
           </div>
@@ -134,7 +119,7 @@ export default function EditArtworkForm({ opera, categorie }: { opera: Opera; ca
 
         <div style={{ display: "flex", gap: "0.75rem", paddingTop: "0.5rem" }}>
           <button type="submit" disabled={pending} style={{ fontFamily: "var(--font-inter)", fontSize: "0.68rem", letterSpacing: "0.18em", textTransform: "uppercase", padding: "0.8rem 1.8rem", background: pending ? "rgba(196,120,58,0.5)" : "#C4783C", color: "#FAF8F4", border: "none", cursor: pending ? "default" : "pointer" }}>
-            {pending ? "Salvataggio…" : "Salva modifiche →"}
+            {pending ? "Salvataggio…" : "Salva opera →"}
           </button>
           <Link href="/admin/prodotti" style={{ fontFamily: "var(--font-inter)", fontSize: "0.68rem", letterSpacing: "0.18em", textTransform: "uppercase", padding: "0.8rem 1.4rem", border: "1px solid rgba(26,21,16,0.15)", color: "rgba(26,21,16,0.5)", textDecoration: "none" }}>
             Annulla

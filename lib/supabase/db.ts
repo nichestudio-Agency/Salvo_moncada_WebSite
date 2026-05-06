@@ -1,5 +1,5 @@
 import { supabase } from './client'
-import type { Opera, Ordine, OrdineStatus, Messaggio } from '@/types/db'
+import type { Opera, Ordine, OrdineStatus, Messaggio, Categoria } from '@/types/db'
 
 // ── Opere ────────────────────────────────────────────────────────────────────
 
@@ -113,5 +113,30 @@ export async function markMessaggioLetto(id: string, letto: boolean): Promise<vo
 
 export async function deleteMessaggio(id: string): Promise<void> {
   const { error } = await supabase.from('messaggi').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ── Categorie ─────────────────────────────────────────────────────────────────
+
+export async function getCategorie(soloAttive = false): Promise<Categoria[]> {
+  let q = supabase.from('categorie').select('*').order('ordine', { ascending: true })
+  if (soloAttive) q = q.eq('attiva', true)
+  const { data, error } = await q
+  if (error) throw error
+  return data ?? []
+}
+
+export async function insertCategoria(cat: Omit<Categoria, 'id'>): Promise<void> {
+  const { error } = await supabase.from('categorie').insert(cat)
+  if (error) throw error
+}
+
+export async function updateCategoria(id: string, updates: Partial<Omit<Categoria, 'id'>>): Promise<void> {
+  const { error } = await supabase.from('categorie').update(updates).eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteCategoria(id: string): Promise<void> {
+  const { error } = await supabase.from('categorie').delete().eq('id', id)
   if (error) throw error
 }

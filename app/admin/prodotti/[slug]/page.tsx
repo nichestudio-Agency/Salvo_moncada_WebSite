@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getOperaBySlug } from "@/lib/supabase/db";
+import { getOperaBySlug, getCategorie } from "@/lib/supabase/db";
 import EditArtworkForm from "@/components/admin/EditArtworkForm";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +10,10 @@ export default async function ModificaProdottoPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const opera = await getOperaBySlug(slug);
+  const [opera, categorie] = await Promise.all([
+    getOperaBySlug(slug),
+    getCategorie(false),
+  ]);
   if (!opera) notFound();
-  return <EditArtworkForm opera={opera} />;
+  return <EditArtworkForm opera={opera} categorie={categorie} />;
 }

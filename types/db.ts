@@ -1,6 +1,13 @@
 export type Disponibilita = 'disponibile' | 'venduta' | 'riservata' | 'non_in_vendita'
 export type OrdineStatus  = 'nuovo' | 'in-lavorazione' | 'completato'
-export type Categoria     = 'pescheria' | 'fruttivendolo' | 'paesaggio' | 'personalizzato'
+
+export type Categoria = {
+  id:     string
+  nome:   string
+  slug:   string
+  attiva: boolean
+  ordine: number
+}
 
 export type Opera = {
   id:              string
@@ -11,7 +18,7 @@ export type Opera = {
   anno:            number | null
   dimensioni:      string
   tecnica:         string
-  categoria:       Categoria
+  categoria:       string
   disponibilita:   Disponibilita
   prezzo:          number | null
   immagini:        string[]

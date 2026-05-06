@@ -6,10 +6,11 @@ export const metadata = {
 };
 
 const navItems = [
-  { href: "/admin",            label: "Dashboard" },
-  { href: "/admin/prodotti",   label: "Prodotti" },
-  { href: "/admin/ordini",     label: "Ordini" },
-  { href: "/admin/messaggi",   label: "Messaggi" },
+  { href: "/admin",             label: "Dashboard" },
+  { href: "/admin/prodotti",    label: "Prodotti" },
+  { href: "/admin/ordini",      label: "Ordini" },
+  { href: "/admin/messaggi",    label: "Messaggi" },
+  { href: "/admin/categorie",   label: "Categorie" },
   { href: "/admin/statistiche", label: "Statistiche" },
 ];
 

@@ -7,9 +7,11 @@ import { revalidatePath } from "next/cache"
 import {
   insertOpera, updateOpera, deleteOpera,
   insertOrdine, updateOrdineStatus, deleteOrdine,
-  uploadImmagine, markMessaggioLetto as dbMarkLetto, deleteMessaggio as dbDeleteMessaggio,
+  uploadImmagine,
+  markMessaggioLetto as dbMarkLetto, deleteMessaggio as dbDeleteMessaggio,
+  insertCategoria, updateCategoria as dbUpdateCategoria, deleteCategoria as dbDeleteCategoria,
 } from "@/lib/supabase/db"
-import type { Categoria, Disponibilita } from "@/types/db"
+import type { Disponibilita } from "@/types/db"
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
@@ -113,17 +115,19 @@ export async function createArtwork(
       anno:         parseInt(formData.get("anno") as string) || null,
       dimensioni:   (formData.get("dimensioni")  as string)?.trim() ?? "",
       tecnica:      (formData.get("tecnica")     as string)?.trim() ?? "",
-      categoria:    ((formData.get("categoria") as string) ?? "paesaggio") as Categoria,
+      categoria:     (formData.get("categoria")    as string) ?? "paesaggio",
       disponibilita: ((formData.get("disponibilita") as string) ?? "disponibile") as Disponibilita,
       prezzo:       (formData.get("prezzo") as string) ? parseInt(formData.get("prezzo") as string) : null,
       immagini:     immagineUrl ? [immagineUrl] : [],
       in_evidenza:  formData.get("in_evidenza") === "true",
     })
   } catch (e: unknown) {
-    if (e instanceof Error && e.message.includes("duplicate")) {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error("[createArtwork]", msg)
+    if (msg.includes("duplicate") || msg.includes("unique")) {
       return { error: "Esiste già un'opera con questo titolo (slug duplicato)." }
     }
-    return { error: "Errore nel salvataggio. Riprova." }
+    return { error: `Errore nel salvataggio: ${msg}` }
   }
 
   revalidatePath("/opere")
@@ -151,14 +155,16 @@ export async function updateArtwork(
       anno:         parseInt(formData.get("anno") as string) || null,
       dimensioni:   (formData.get("dimensioni")   as string)?.trim() ?? "",
       tecnica:      (formData.get("tecnica")      as string)?.trim() ?? "",
-      categoria:    ((formData.get("categoria") as string) ?? "paesaggio") as Categoria,
+      categoria:    (formData.get("categoria")    as string) ?? "paesaggio",
       disponibilita: ((formData.get("disponibilita") as string) ?? "disponibile") as Disponibilita,
       prezzo:       (formData.get("prezzo") as string) ? parseInt(formData.get("prezzo") as string) : null,
       ...(immagineUrl ? { immagini: [immagineUrl] } : {}),
       in_evidenza:  formData.get("in_evidenza") === "true",
     })
-  } catch {
-    return { error: "Errore nel salvataggio. Riprova." }
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error("[updateArtwork]", msg)
+    return { error: `Errore nel salvataggio: ${msg}` }
   }
 
   revalidatePath("/opere")
@@ -184,4 +190,47 @@ export async function markMessaggioLetto(id: string, letto: boolean) {
 export async function deleteMessaggio(id: string) {
   await dbDeleteMessaggio(id)
   revalidatePath("/admin/messaggi")
+}
+
+// ── Categorie ─────────────────────────────────────────────────────────────────
+
+function slugifyCategoria(str: string) {
+  return str.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+}
+
+export async function createCategoria(
+  _prev: { error?: string } | null,
+  formData: FormData
+): Promise<{ error?: string }> {
+  const nome = (formData.get("nome") as string)?.trim()
+  if (!nome) return { error: "Il nome è obbligatorio." }
+  const slug = slugifyCategoria(nome)
+  try {
+    await insertCategoria({ nome, slug, attiva: true, ordine: parseInt(formData.get("ordine") as string) || 0 })
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e)
+    if (msg.includes("unique")) return { error: "Esiste già una categoria con questo nome." }
+    return { error: `Errore: ${msg}` }
+  }
+  revalidatePath("/admin/categorie")
+  revalidatePath("/admin/prodotti/nuovo")
+  redirect("/admin/categorie")
+}
+
+export async function toggleCategoriaAttiva(id: string, attiva: boolean) {
+  await dbUpdateCategoria(id, { attiva })
+  revalidatePath("/admin/categorie")
+}
+
+export async function renameCategoriaAction(id: string, nome: string) {
+  const slug = slugifyCategoria(nome)
+  await dbUpdateCategoria(id, { nome, slug })
+  revalidatePath("/admin/categorie")
+  revalidatePath("/admin/prodotti/nuovo")
+}
+
+export async function deleteCategoriaAction(id: string) {
+  await dbDeleteCategoria(id)
+  revalidatePath("/admin/categorie")
+  revalidatePath("/admin/prodotti/nuovo")
 }
