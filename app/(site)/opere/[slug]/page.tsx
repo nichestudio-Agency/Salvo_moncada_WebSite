@@ -6,6 +6,8 @@ import { getOperaBySlug, getOpere } from '@/lib/supabase/db'
 import type { Opera } from '@/types/db'
 import OperaImageGallery from '@/components/artwork/OperaImageGallery'
 
+export const revalidate = 3600
+
 type PageProps = { params: Promise<{ slug: string }> }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

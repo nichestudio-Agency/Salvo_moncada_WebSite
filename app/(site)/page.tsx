@@ -1,3 +1,5 @@
+export const revalidate = 3600
+
 import { getOpereInEvidenza } from '@/lib/supabase/db'
 import HeroSection from '@/components/sections/HeroSection'
 import OpereInEvidenzaSection from '@/components/sections/OpereInEvidenzaSection'

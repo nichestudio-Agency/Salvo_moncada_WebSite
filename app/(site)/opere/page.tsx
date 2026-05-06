@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: 'Sfoglia tutte le tegole dipinte di Salvo Moncada. Scene di vita siciliana dipinte a mano su maiolica.',
 }
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600
 
 export default async function OperePage() {
   const opere = await getOpere().catch(() => [])
