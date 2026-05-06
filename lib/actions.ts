@@ -5,9 +5,9 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 import {
-  insertOpera, updateOpera, deleteOpera, getOpere,
+  insertOpera, updateOpera, deleteOpera,
   insertOrdine, updateOrdineStatus, deleteOrdine,
-  uploadImmagine,
+  uploadImmagine, markMessaggioLetto as dbMarkLetto, deleteMessaggio as dbDeleteMessaggio,
 } from "@/lib/supabase/db"
 import type { Categoria, Disponibilita } from "@/types/db"
 
@@ -172,4 +172,16 @@ export async function deleteArtwork(slug: string) {
   revalidatePath("/opere")
   revalidatePath("/")
   revalidatePath("/admin/prodotti")
+}
+
+// ── Messaggi ─────────────────────────────────────────────────────────────────
+
+export async function markMessaggioLetto(id: string, letto: boolean) {
+  await dbMarkLetto(id, letto)
+  revalidatePath("/admin/messaggi")
+}
+
+export async function deleteMessaggio(id: string) {
+  await dbDeleteMessaggio(id)
+  revalidatePath("/admin/messaggi")
 }

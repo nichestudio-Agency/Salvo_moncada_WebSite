@@ -6,9 +6,11 @@ export const metadata = {
 };
 
 const navItems = [
-  { href: "/admin", label: "Dashboard" },
-  { href: "/admin/prodotti", label: "Prodotti" },
-  { href: "/admin/ordini", label: "Ordini" },
+  { href: "/admin",            label: "Dashboard" },
+  { href: "/admin/prodotti",   label: "Prodotti" },
+  { href: "/admin/ordini",     label: "Ordini" },
+  { href: "/admin/messaggi",   label: "Messaggi" },
+  { href: "/admin/statistiche", label: "Statistiche" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

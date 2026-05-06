@@ -1,5 +1,5 @@
 import { supabase } from './client'
-import type { Opera, Ordine, OrdineStatus } from '@/types/db'
+import type { Opera, Ordine, OrdineStatus, Messaggio } from '@/types/db'
 
 // ── Opere ────────────────────────────────────────────────────────────────────
 
@@ -31,14 +31,14 @@ export async function getOpereInEvidenza(): Promise<Opera[]> {
   return data ?? []
 }
 
-export async function insertOpera(opera: Omit<Opera, 'id' | 'created_at'>): Promise<void> {
+export async function insertOpera(opera: Omit<Opera, 'id' | 'created_at' | 'visualizzazioni'>): Promise<void> {
   const { error } = await supabase.from('opere').insert(opera)
   if (error) throw error
 }
 
 export async function updateOpera(
   slug: string,
-  updates: Partial<Omit<Opera, 'id' | 'created_at' | 'slug'>>
+  updates: Partial<Omit<Opera, 'id' | 'created_at' | 'slug' | 'visualizzazioni'>>
 ): Promise<void> {
   const { error } = await supabase.from('opere').update(updates).eq('slug', slug)
   if (error) throw error
@@ -47,6 +47,10 @@ export async function updateOpera(
 export async function deleteOpera(slug: string): Promise<void> {
   const { error } = await supabase.from('opere').delete().eq('slug', slug)
   if (error) throw error
+}
+
+export async function incrementViews(slug: string): Promise<void> {
+  await supabase.rpc('increment_views', { p_slug: slug })
 }
 
 export async function uploadImmagine(file: File, slug: string): Promise<string | null> {
@@ -83,5 +87,31 @@ export async function updateOrdineStatus(id: string, status: OrdineStatus): Prom
 
 export async function deleteOrdine(id: string): Promise<void> {
   const { error } = await supabase.from('ordini').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ── Messaggi ─────────────────────────────────────────────────────────────────
+
+export async function getMessaggi(): Promise<Messaggio[]> {
+  const { data, error } = await supabase
+    .from('messaggi')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data ?? []
+}
+
+export async function insertMessaggio(msg: Omit<Messaggio, 'id' | 'created_at' | 'letto'>): Promise<void> {
+  const { error } = await supabase.from('messaggi').insert({ ...msg, letto: false })
+  if (error) throw error
+}
+
+export async function markMessaggioLetto(id: string, letto: boolean): Promise<void> {
+  const { error } = await supabase.from('messaggi').update({ letto }).eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteMessaggio(id: string): Promise<void> {
+  const { error } = await supabase.from('messaggi').delete().eq('id', id)
   if (error) throw error
 }

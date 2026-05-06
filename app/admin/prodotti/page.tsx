@@ -41,7 +41,7 @@ export default async function AdminProdottiPage() {
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid rgba(26,21,16,0.08)" }}>
-              {["Titolo", "Categoria", "Dimensioni", "Prezzo", "Stato", ""].map((h) => (
+              {["", "Titolo", "Categoria", "Dimensioni", "Prezzo", "Stato", ""].map((h) => (
                 <th key={h} style={{ fontFamily: "var(--font-inter)", fontSize: "0.58rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,21,16,0.35)", padding: "0.85rem 1rem", textAlign: "left", fontWeight: 400, whiteSpace: "nowrap" }}>
                   {h}
                 </th>
@@ -53,6 +53,14 @@ export default async function AdminProdottiPage() {
               const dispo = disponibilitaLabel[opera.disponibilita] ?? disponibilitaLabel.non_in_vendita;
               return (
                 <tr key={opera.slug} style={{ borderBottom: i < opere.length - 1 ? "1px solid rgba(26,21,16,0.06)" : "none" }}>
+                  <td style={{ padding: "0.75rem 0.75rem 0.75rem 1rem", width: 52 }}>
+                    <div style={{ width: 40, height: 40, background: "#ede6dc", flexShrink: 0, overflow: "hidden" }}>
+                      {opera.immagini[0] ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={opera.immagini[0]} alt={opera.titolo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ) : null}
+                    </div>
+                  </td>
                   <td style={{ padding: "0.85rem 1rem" }}>
                     <p style={{ fontFamily: "var(--font-inter)", fontSize: "0.85rem", color: "#1A1510", marginBottom: "0.1rem" }}>
                       {opera.titolo}

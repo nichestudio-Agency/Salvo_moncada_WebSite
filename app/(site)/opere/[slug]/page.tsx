@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { getOperaBySlug, getOpere } from '@/lib/supabase/db'
 import type { Opera } from '@/types/db'
 import OperaImageGallery from '@/components/artwork/OperaImageGallery'
+import ViewTracker from '@/components/artwork/ViewTracker'
 
 export const revalidate = 3600
 
@@ -194,6 +195,7 @@ export default async function OperaDetailPage({ params }: PageProps) {
 
   return (
     <main className="bg-cream min-h-screen">
+      <ViewTracker slug={slug} />
 
       <div className="relative overflow-hidden bg-espresso pt-32 pb-12 md:pt-40 md:pb-14">
         <div
