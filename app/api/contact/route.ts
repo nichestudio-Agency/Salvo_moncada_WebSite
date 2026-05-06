@@ -19,7 +19,9 @@ export async function POST(req: NextRequest) {
     })
 
     return NextResponse.json({ ok: true })
-  } catch {
-    return NextResponse.json({ error: 'Errore interno' }, { status: 500 })
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : typeof e === 'object' && e !== null && 'message' in e ? (e as { message: string }).message : String(e)
+    console.error('[/api/contact]', msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }

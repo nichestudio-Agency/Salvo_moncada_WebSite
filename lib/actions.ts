@@ -13,6 +13,16 @@ import {
 } from "@/lib/supabase/db"
 import type { Disponibilita } from "@/types/db"
 
+function errMsg(e: unknown): string {
+  if (!e) return "Errore sconosciuto"
+  if (typeof e === "string") return e
+  if (e instanceof Error) return e.message
+  const o = e as Record<string, unknown>
+  if (typeof o.message === "string") return o.message
+  if (typeof o.details === "string") return o.details
+  return JSON.stringify(o)
+}
+
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "salvo2024"
@@ -122,7 +132,7 @@ export async function createArtwork(
       in_evidenza:  formData.get("in_evidenza") === "true",
     })
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e)
+    const msg = errMsg(e)
     console.error("[createArtwork]", msg)
     if (msg.includes("duplicate") || msg.includes("unique")) {
       return { error: "Esiste già un'opera con questo titolo (slug duplicato)." }
@@ -162,7 +172,7 @@ export async function updateArtwork(
       in_evidenza:  formData.get("in_evidenza") === "true",
     })
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e)
+    const msg = errMsg(e)
     console.error("[updateArtwork]", msg)
     return { error: `Errore nel salvataggio: ${msg}` }
   }
@@ -208,7 +218,7 @@ export async function createCategoria(
   try {
     await insertCategoria({ nome, slug, attiva: true, ordine: parseInt(formData.get("ordine") as string) || 0 })
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e)
+    const msg = errMsg(e)
     if (msg.includes("unique")) return { error: "Esiste già una categoria con questo nome." }
     return { error: `Errore: ${msg}` }
   }

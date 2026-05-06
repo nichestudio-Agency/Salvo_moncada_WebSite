@@ -1,4 +1,4 @@
-import { supabase } from './client'
+import { supabaseServer as supabase } from './server'
 import type { Opera, Ordine, OrdineStatus, Messaggio, Categoria } from '@/types/db'
 
 // ── Opere ────────────────────────────────────────────────────────────────────
