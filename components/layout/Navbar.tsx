@@ -11,7 +11,7 @@ const links = [
   { href: "/ordina", label: "Ordina" },
 ];
 
-export default function Navbar() {
+export default function Navbar({ cartCount = 0 }: { cartCount?: number }) {
   const pathname = usePathname();
   const [isOverDark, setIsOverDark] = useState(pathname === "/");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -111,6 +111,33 @@ export default function Navbar() {
               </Link>
             );
           })}
+          <Link
+            href="/carrello"
+            className="relative inline-flex items-center justify-center"
+            style={{ color: pathname === "/carrello" ? activeColor : textColor, transition: "color 0.25s" }}
+            aria-label={`Carrello (${cartCount})`}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 4h2l2.5 12.5a2 2 0 0 0 2 1.5h8a2 2 0 0 0 2-1.5L21 8H6" />
+              <circle cx="10" cy="20.5" r="1.2" />
+              <circle cx="17" cy="20.5" r="1.2" />
+            </svg>
+            {cartCount > 0 && (
+              <span
+                style={{
+                  position: "absolute", top: -6, right: -8,
+                  minWidth: 18, height: 18, padding: "0 5px",
+                  background: "#C4783C", color: "#FAF8F4",
+                  fontFamily: "var(--font-inter)", fontSize: "0.58rem", fontWeight: 600,
+                  borderRadius: 999,
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  lineHeight: 1,
+                }}
+              >
+                {cartCount > 99 ? "99+" : cartCount}
+              </span>
+            )}
+          </Link>
         </nav>
 
         {/* Mobile hamburger */}

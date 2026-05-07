@@ -12,7 +12,7 @@ const links = [
   { href: '/contatti', label: 'Contatti' },
 ]
 
-export default function Nav() {
+export default function Nav({ cartCount = 0 }: { cartCount?: number }) {
   const [visible, setVisible] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const pathname = usePathname()
@@ -111,6 +111,25 @@ export default function Nav() {
                         )}
                       </Link>
                     ))}
+                    <Link
+                      href="/carrello"
+                      aria-label={`Carrello (${cartCount})`}
+                      className={[
+                        'relative inline-flex items-center justify-center transition-colors duration-300',
+                        pathname === '/carrello' ? 'text-coral' : 'text-charcoal/70 hover:text-ink',
+                      ].join(' ')}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 4h2l2.5 12.5a2 2 0 0 0 2 1.5h8a2 2 0 0 0 2-1.5L21 8H6" />
+                        <circle cx="10" cy="20.5" r="1.2" />
+                        <circle cx="17" cy="20.5" r="1.2" />
+                      </svg>
+                      {cartCount > 0 && (
+                        <span className="absolute -right-2 -top-1 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-terracotta px-1.5 text-[0.58rem] font-semibold leading-none text-cream">
+                          {cartCount > 99 ? '99+' : cartCount}
+                        </span>
+                      )}
+                    </Link>
                   </nav>
 
                   {/* Mobile hamburger */}
@@ -159,13 +178,27 @@ export default function Nav() {
                     key={link.href}
                     href={link.href}
                     className={[
-                      'border-b border-black/6 py-4 font-sans text-[0.72rem] font-semibold uppercase tracking-[0.24em] transition-colors duration-200 last:border-0',
+                      'border-b border-black/6 py-4 font-sans text-[0.72rem] font-semibold uppercase tracking-[0.24em] transition-colors duration-200',
                       pathname === link.href ? 'text-coral' : 'text-charcoal/70 hover:text-ink',
                     ].join(' ')}
                   >
                     {link.label}
                   </Link>
                 ))}
+                <Link
+                  href="/carrello"
+                  className={[
+                    'flex items-center justify-between py-4 font-sans text-[0.72rem] font-semibold uppercase tracking-[0.24em] transition-colors duration-200',
+                    pathname === '/carrello' ? 'text-coral' : 'text-charcoal/70 hover:text-ink',
+                  ].join(' ')}
+                >
+                  <span>Carrello</span>
+                  {cartCount > 0 && (
+                    <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-terracotta px-1.5 text-[0.62rem] text-cream">
+                      {cartCount > 99 ? '99+' : cartCount}
+                    </span>
+                  )}
+                </Link>
               </nav>
             </div>
           </motion.div>

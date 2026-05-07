@@ -6,6 +6,7 @@ import { getOperaBySlug, getOpere } from '@/lib/supabase/db'
 import type { Opera } from '@/types/db'
 import OperaImageGallery from '@/components/artwork/OperaImageGallery'
 import ViewTracker from '@/components/artwork/ViewTracker'
+import AddToCartButton from '@/components/site/AddToCartButton'
 
 export const revalidate = 3600
 
@@ -84,16 +85,25 @@ function OperaInfoPanel({ opera }: { opera: Opera }) {
         </div>
       </div>
 
-      <div className="mt-8">
-        {opera.disponibilita === 'disponibile' && (
+      <div className="mt-8 flex flex-col gap-3">
+        {opera.disponibilita === 'disponibile' && opera.prezzo ? (
+          <>
+            <AddToCartButton slug={opera.slug} prezzo={opera.prezzo} />
+            <Link
+              href={`/contatti?opera=${encodedTitle}`}
+              className="text-center font-sans text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-charcoal/55 underline-offset-4 transition hover:text-coral hover:underline"
+            >
+              Oppure richiedi informazioni
+            </Link>
+          </>
+        ) : opera.disponibilita === 'disponibile' ? (
           <Link
             href={`/contatti?opera=${encodedTitle}`}
             className="flex w-full items-center justify-center gap-2 rounded-full bg-coral px-8 py-4 font-sans text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-cream shadow-[0_8px_24px_rgba(212,82,42,0.3)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(212,82,42,0.4)]"
           >
             Richiedi informazioni
           </Link>
-        )}
-        {opera.disponibilita !== 'disponibile' && (
+        ) : (
           <div className={`w-full rounded-full px-8 py-4 text-center font-sans text-[0.7rem] font-semibold uppercase tracking-[0.22em] ${
             opera.disponibilita === 'venduta'   ? 'bg-rose-50 text-rose-500' :
             opera.disponibilita === 'riservata' ? 'bg-amber-50 text-amber-600' :
@@ -102,8 +112,8 @@ function OperaInfoPanel({ opera }: { opera: Opera }) {
             {dispo.label}
           </div>
         )}
-        <p className="mt-3 text-center font-sans text-[0.6rem] text-charcoal/35 tracking-[0.1em]">
-          Risposta entro 24 ore · Spedizione in tutta Italia
+        <p className="text-center font-sans text-[0.6rem] text-charcoal/35 tracking-[0.1em]">
+          Spedizione in Italia ed estero · Pezzo unico fatto a mano
         </p>
       </div>
     </div>

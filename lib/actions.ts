@@ -10,7 +10,10 @@ import {
   uploadImmagine,
   markMessaggioLetto as dbMarkLetto, deleteMessaggio as dbDeleteMessaggio,
   insertCategoria, updateCategoria as dbUpdateCategoria, deleteCategoria as dbDeleteCategoria,
+  getOperaBySlug,
+  addCarrelloItem, removeCarrelloItem, clearCarrello,
 } from "@/lib/supabase/db"
+import { getOrCreateCart } from "@/lib/cart"
 import type { Disponibilita } from "@/types/db"
 
 function errMsg(e: unknown): string {
@@ -243,4 +246,43 @@ export async function deleteCategoriaAction(id: string) {
   await dbDeleteCategoria(id)
   revalidatePath("/admin/categorie")
   revalidatePath("/admin/prodotti/nuovo")
+}
+
+// ── Carrello ─────────────────────────────────────────────────────────────────
+
+export async function addToCart(operaSlug: string): Promise<{ error?: string; success?: boolean }> {
+  const opera = await getOperaBySlug(operaSlug)
+  if (!opera) return { error: "Opera non trovata." }
+
+  if (opera.disponibilita !== "disponibile") {
+    return { error: "Quest'opera non è più disponibile." }
+  }
+  if (opera.prezzo == null || opera.prezzo <= 0) {
+    return { error: "Quest'opera non è in vendita." }
+  }
+
+  const { carrello } = await getOrCreateCart()
+
+  try {
+    // prezzo nel DB è in euro intero; lo convertiamo in centesimi.
+    await addCarrelloItem(carrello.id, opera.id, opera.prezzo * 100)
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Errore nell'aggiunta al carrello." }
+  }
+
+  revalidatePath("/carrello")
+  revalidatePath("/")
+  return { success: true }
+}
+
+export async function removeFromCartAction(itemId: string): Promise<void> {
+  const { carrello } = await getOrCreateCart()
+  await removeCarrelloItem(itemId, carrello.id)
+  revalidatePath("/carrello")
+}
+
+export async function clearCartAction(): Promise<void> {
+  const { carrello } = await getOrCreateCart()
+  await clearCarrello(carrello.id)
+  revalidatePath("/carrello")
 }

@@ -1,8 +1,10 @@
 import { supabaseAdmin as supabase } from './admin'
 import type {
   Opera, Ordine, OrdineStatus, Messaggio, Categoria,
-  Profilo, Indirizzo, ZonaSpedizione, Vendita, VenditaItem,
+  Profilo, Indirizzo, Carrello, CarrelloItem, ZonaSpedizione, Vendita, VenditaItem,
 } from '@/types/db'
+
+export type CarrelloItemConOpera = CarrelloItem & { opera: Opera | null }
 
 // ── Opere ────────────────────────────────────────────────────────────────────
 
@@ -266,5 +268,94 @@ export async function getVenditaItems(venditaId: string): Promise<VenditaItem[]>
 
 export async function updateVendita(id: string, updates: Partial<Omit<Vendita, 'id' | 'numero' | 'created_at' | 'updated_at'>>): Promise<void> {
   const { error } = await supabase.from('vendite').update(updates).eq('id', id)
+  if (error) throw error
+}
+
+export async function insertVenditaItems(items: Omit<VenditaItem, 'id' | 'created_at'>[]): Promise<void> {
+  if (items.length === 0) return
+  const { error } = await supabase.from('vendite_items').insert(items)
+  if (error) throw error
+}
+
+// ── Carrelli ─────────────────────────────────────────────────────────────────
+
+export async function getCarrelloByProfilo(profiloId: string): Promise<Carrello | null> {
+  const { data } = await supabase.from('carrelli').select('*').eq('profilo_id', profiloId).maybeSingle()
+  return data ?? null
+}
+
+export async function getCarrelloBySession(token: string): Promise<Carrello | null> {
+  const { data } = await supabase.from('carrelli').select('*').eq('session_token', token).maybeSingle()
+  return data ?? null
+}
+
+export async function createCarrelloPerProfilo(profiloId: string): Promise<Carrello> {
+  const { data, error } = await supabase.from('carrelli').insert({ profilo_id: profiloId }).select('*').single()
+  if (error || !data) throw error ?? new Error('Carrello non creato')
+  return data
+}
+
+export async function createCarrelloPerSession(token: string): Promise<Carrello> {
+  const { data, error } = await supabase.from('carrelli').insert({ session_token: token }).select('*').single()
+  if (error || !data) throw error ?? new Error('Carrello non creato')
+  return data
+}
+
+export async function getCarrelloItems(carrelloId: string): Promise<CarrelloItemConOpera[]> {
+  const { data, error } = await supabase
+    .from('carrelli_items')
+    .select('*, opera:opere(*)')
+    .eq('carrello_id', carrelloId)
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return (data ?? []) as CarrelloItemConOpera[]
+}
+
+export async function addCarrelloItem(carrelloId: string, operaId: string, prezzoSnapshot: number): Promise<void> {
+  const { error } = await supabase
+    .from('carrelli_items')
+    .upsert(
+      { carrello_id: carrelloId, opera_id: operaId, prezzo_snapshot: prezzoSnapshot, quantita: 1 },
+      { onConflict: 'carrello_id,opera_id', ignoreDuplicates: true },
+    )
+  if (error) throw error
+  await supabase.from('carrelli').update({ updated_at: new Date().toISOString() }).eq('id', carrelloId)
+}
+
+export async function removeCarrelloItem(itemId: string, carrelloId: string): Promise<void> {
+  const { error } = await supabase.from('carrelli_items').delete().eq('id', itemId).eq('carrello_id', carrelloId)
+  if (error) throw error
+}
+
+export async function clearCarrello(carrelloId: string): Promise<void> {
+  const { error } = await supabase.from('carrelli_items').delete().eq('carrello_id', carrelloId)
+  if (error) throw error
+}
+
+// Sposta gli item dal carrello ospite al carrello utente, evitando duplicati,
+// poi cancella il carrello ospite.
+export async function mergeCarrelli(targetCartId: string, sourceCartId: string): Promise<void> {
+  if (targetCartId === sourceCartId) return
+  const { data: items } = await supabase.from('carrelli_items').select('*').eq('carrello_id', sourceCartId)
+  for (const item of items ?? []) {
+    await supabase.from('carrelli_items').upsert(
+      {
+        carrello_id:     targetCartId,
+        opera_id:        item.opera_id,
+        prezzo_snapshot: item.prezzo_snapshot,
+        quantita:        item.quantita,
+      },
+      { onConflict: 'carrello_id,opera_id', ignoreDuplicates: true },
+    )
+  }
+  await supabase.from('carrelli').delete().eq('id', sourceCartId)
+}
+
+// Promuove un carrello ospite a carrello utente: cambia profilo_id + rimuove session_token.
+export async function promuoviCarrelloAUtente(cartId: string, profiloId: string): Promise<void> {
+  const { error } = await supabase
+    .from('carrelli')
+    .update({ profilo_id: profiloId, session_token: null })
+    .eq('id', cartId)
   if (error) throw error
 }
