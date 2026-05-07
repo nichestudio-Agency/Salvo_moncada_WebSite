@@ -1,5 +1,8 @@
-import { supabaseServer as supabase } from './server'
-import type { Opera, Ordine, OrdineStatus, Messaggio, Categoria } from '@/types/db'
+import { supabaseAdmin as supabase } from './admin'
+import type {
+  Opera, Ordine, OrdineStatus, Messaggio, Categoria,
+  Profilo, Indirizzo, ZonaSpedizione, Vendita, VenditaItem,
+} from '@/types/db'
 
 // ── Opere ────────────────────────────────────────────────────────────────────
 
@@ -31,7 +34,9 @@ export async function getOpereInEvidenza(): Promise<Opera[]> {
   return data ?? []
 }
 
-export async function insertOpera(opera: Omit<Opera, 'id' | 'created_at' | 'visualizzazioni'>): Promise<void> {
+export async function insertOpera(
+  opera: Omit<Opera, 'id' | 'created_at' | 'visualizzazioni' | 'riservata_fino' | 'riservata_per_vendita_id'>
+): Promise<void> {
   const { error } = await supabase.from('opere').insert(opera)
   if (error) throw error
 }
@@ -138,5 +143,128 @@ export async function updateCategoria(id: string, updates: Partial<Omit<Categori
 
 export async function deleteCategoria(id: string): Promise<void> {
   const { error } = await supabase.from('categorie').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ── Profili ──────────────────────────────────────────────────────────────────
+
+export async function getProfilo(userId: string): Promise<Profilo | null> {
+  const { data } = await supabase.from('profili').select('*').eq('id', userId).single()
+  return data ?? null
+}
+
+export async function updateProfilo(userId: string, updates: Partial<Omit<Profilo, 'id' | 'created_at' | 'updated_at'>>): Promise<void> {
+  const { error } = await supabase.from('profili').update(updates).eq('id', userId)
+  if (error) throw error
+}
+
+// ── Indirizzi ────────────────────────────────────────────────────────────────
+
+export async function getIndirizzi(profiloId: string): Promise<Indirizzo[]> {
+  const { data, error } = await supabase
+    .from('indirizzi')
+    .select('*')
+    .eq('profilo_id', profiloId)
+    .order('predefinito', { ascending: false })
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data ?? []
+}
+
+export async function getIndirizzo(id: string, profiloId: string): Promise<Indirizzo | null> {
+  const { data } = await supabase
+    .from('indirizzi')
+    .select('*')
+    .eq('id', id)
+    .eq('profilo_id', profiloId)
+    .single()
+  return data ?? null
+}
+
+export async function insertIndirizzo(indirizzo: Omit<Indirizzo, 'id' | 'created_at'>): Promise<Indirizzo> {
+  if (indirizzo.predefinito) {
+    await supabase.from('indirizzi').update({ predefinito: false }).eq('profilo_id', indirizzo.profilo_id)
+  }
+  const { data, error } = await supabase.from('indirizzi').insert(indirizzo).select('*').single()
+  if (error) throw error
+  return data
+}
+
+export async function updateIndirizzo(id: string, profiloId: string, updates: Partial<Omit<Indirizzo, 'id' | 'profilo_id' | 'created_at'>>): Promise<void> {
+  if (updates.predefinito) {
+    await supabase.from('indirizzi').update({ predefinito: false }).eq('profilo_id', profiloId)
+  }
+  const { error } = await supabase.from('indirizzi').update(updates).eq('id', id).eq('profilo_id', profiloId)
+  if (error) throw error
+}
+
+export async function deleteIndirizzo(id: string, profiloId: string): Promise<void> {
+  const { error } = await supabase.from('indirizzi').delete().eq('id', id).eq('profilo_id', profiloId)
+  if (error) throw error
+}
+
+// ── Zone spedizione ──────────────────────────────────────────────────────────
+
+export async function getZoneSpedizione(soloAttive = true): Promise<ZonaSpedizione[]> {
+  let q = supabase.from('zone_spedizione').select('*').order('ordine', { ascending: true })
+  if (soloAttive) q = q.eq('attiva', true)
+  const { data, error } = await q
+  if (error) throw error
+  return data ?? []
+}
+
+export async function getZonaPerPaese(codicePaese: string): Promise<ZonaSpedizione | null> {
+  const zone = await getZoneSpedizione(true)
+  // Match esatto sul codice paese, altrimenti fallback su '*'
+  return zone.find((z) => z.paesi.includes(codicePaese))
+      ?? zone.find((z) => z.paesi.includes('*'))
+      ?? null
+}
+
+export async function updateZonaSpedizione(id: string, updates: Partial<Omit<ZonaSpedizione, 'id' | 'created_at'>>): Promise<void> {
+  const { error } = await supabase.from('zone_spedizione').update(updates).eq('id', id)
+  if (error) throw error
+}
+
+// ── Vendite ──────────────────────────────────────────────────────────────────
+
+export async function getVendite(): Promise<Vendita[]> {
+  const { data, error } = await supabase.from('vendite').select('*').order('created_at', { ascending: false })
+  if (error) throw error
+  return data ?? []
+}
+
+export async function getVenditeByProfilo(profiloId: string): Promise<Vendita[]> {
+  const { data, error } = await supabase
+    .from('vendite')
+    .select('*')
+    .eq('profilo_id', profiloId)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data ?? []
+}
+
+export async function getVenditaById(id: string): Promise<Vendita | null> {
+  const { data } = await supabase.from('vendite').select('*').eq('id', id).single()
+  return data ?? null
+}
+
+export async function getVenditaByStripeSession(sessionId: string): Promise<Vendita | null> {
+  const { data } = await supabase.from('vendite').select('*').eq('stripe_session_id', sessionId).single()
+  return data ?? null
+}
+
+export async function getVenditaItems(venditaId: string): Promise<VenditaItem[]> {
+  const { data, error } = await supabase
+    .from('vendite_items')
+    .select('*')
+    .eq('vendita_id', venditaId)
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return data ?? []
+}
+
+export async function updateVendita(id: string, updates: Partial<Omit<Vendita, 'id' | 'numero' | 'created_at' | 'updated_at'>>): Promise<void> {
+  const { error } = await supabase.from('vendite').update(updates).eq('id', id)
   if (error) throw error
 }
