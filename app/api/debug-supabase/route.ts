@@ -21,10 +21,23 @@ export async function GET() {
   const key = serviceKey ?? anonKey
   const supabase = createClient(url, key, { auth: { persistSession: false } })
 
+  // Test 1: raw HTTP ping all'health check di Supabase
+  try {
+    const res = await fetch(`${url}/rest/v1/`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+    })
+    info.http_status = res.status
+    info.http_ok = res.ok
+  } catch (e: unknown) {
+    info.http_error = e instanceof Error ? e.message : String(e)
+    return NextResponse.json({ ...info, verdict: 'URL irraggiungibile — probabilmente sbagliato o progetto eliminato' }, { status: 500 })
+  }
+
+  // Test 2: query alla tabella opere
   try {
     const { data, error } = await supabase.from('opere').select('id').limit(1)
-    if (error) return NextResponse.json({ ...info, db_error: error.message, db_code: error.code }, { status: 500 })
-    return NextResponse.json({ ...info, ok: true, opere_count_sample: data?.length })
+    if (error) return NextResponse.json({ ...info, db_error: error.message, db_code: error.code, verdict: 'Connessione OK ma errore DB' }, { status: 500 })
+    return NextResponse.json({ ...info, ok: true, verdict: 'Tutto funziona', opere_sample: data?.length })
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e)
     return NextResponse.json({ ...info, fetch_error: msg }, { status: 500 })
