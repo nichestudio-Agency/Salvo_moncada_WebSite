@@ -11,7 +11,9 @@ export async function GET() {
     url_format_ok: url?.startsWith('https://') && url?.includes('.supabase.co'),
     anon_key_set: !!anonKey,
     service_key_set: !!serviceKey,
-    url_preview: url ? url.slice(0, 30) + '…' : null,
+    url_full: url,
+    url_length: url?.length,
+    url_trimmed_length: url?.trim().length,
   }
 
   if (!url || !anonKey) {
