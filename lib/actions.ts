@@ -108,15 +108,15 @@ export async function createArtwork(
 
   const slug = slugify(titolo)
 
-  // Gestione immagine: upload file oppure URL manuale
-  let immagineUrl = (formData.get("immagine_url") as string)?.trim() || ""
-  const file = formData.get("immagine_file") as File | null
-  if (file && file.size > 0) {
-    const uploaded = await uploadImmagine(file, slug)
-    if (uploaded) immagineUrl = uploaded
-  }
-
   try {
+    // Gestione immagine: upload file oppure URL manuale
+    let immagineUrl = (formData.get("immagine_url") as string)?.trim() || ""
+    const file = formData.get("immagine_file") as File | null
+    if (file && file.size > 0) {
+      const uploaded = await uploadImmagine(file, slug)
+      if (uploaded) immagineUrl = uploaded
+    }
+
     await insertOpera({
       slug,
       titolo,
@@ -150,14 +150,14 @@ export async function updateArtwork(
   _prev: { error?: string } | null,
   formData: FormData
 ): Promise<{ error?: string }> {
-  let immagineUrl = (formData.get("immagine_url") as string)?.trim() || ""
-  const file = formData.get("immagine_file") as File | null
-  if (file && file.size > 0) {
-    const uploaded = await uploadImmagine(file, slug)
-    if (uploaded) immagineUrl = uploaded
-  }
-
   try {
+    let immagineUrl = (formData.get("immagine_url") as string)?.trim() || ""
+    const file = formData.get("immagine_file") as File | null
+    if (file && file.size > 0) {
+      const uploaded = await uploadImmagine(file, slug)
+      if (uploaded) immagineUrl = uploaded
+    }
+
     await updateOpera(slug, {
       titolo:       (formData.get("titolo")       as string)?.trim(),
       sottotitolo:  (formData.get("sottotitolo")  as string)?.trim() ?? "",
