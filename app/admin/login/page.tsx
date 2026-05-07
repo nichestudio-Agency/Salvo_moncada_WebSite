@@ -9,7 +9,9 @@ export default function AdminLoginPage() {
   return (
     <div
       style={{
-        minHeight: "100vh",
+        position: "fixed",
+        inset: 0,
+        zIndex: 100,
         background: "#0C0A07",
         display: "flex",
         alignItems: "center",
