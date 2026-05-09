@@ -12,7 +12,7 @@ const links = [
   { href: '/contatti', label: 'Contatti' },
 ]
 
-export default function Nav({ cartCount = 0 }: { cartCount?: number }) {
+export default function Nav({ cartCount = 0, isLoggedIn = false }: { cartCount?: number; isLoggedIn?: boolean }) {
   const [visible, setVisible] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const pathname = usePathname()
@@ -112,6 +112,19 @@ export default function Nav({ cartCount = 0 }: { cartCount?: number }) {
                       </Link>
                     ))}
                     <Link
+                      href={isLoggedIn ? '/account' : '/account/login'}
+                      aria-label={isLoggedIn ? 'Il tuo account' : 'Accedi'}
+                      className={[
+                        'inline-flex items-center justify-center transition-colors duration-300',
+                        pathname.startsWith('/account') ? 'text-coral' : 'text-charcoal/70 hover:text-ink',
+                      ].join(' ')}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="8" r="4" />
+                        <path d="M4 21c0-4 4-7 8-7s8 3 8 7" />
+                      </svg>
+                    </Link>
+                    <Link
                       href="/carrello"
                       aria-label={`Carrello (${cartCount})`}
                       className={[
@@ -209,7 +222,7 @@ export default function Nav({ cartCount = 0 }: { cartCount?: number }) {
                 <Link
                   href="/carrello"
                   className={[
-                    'flex items-center justify-between py-4 font-sans text-[0.72rem] font-semibold uppercase tracking-[0.24em] transition-colors duration-200',
+                    'flex items-center justify-between border-b border-black/6 py-4 font-sans text-[0.72rem] font-semibold uppercase tracking-[0.24em] transition-colors duration-200',
                     pathname === '/carrello' ? 'text-coral' : 'text-charcoal/70 hover:text-ink',
                   ].join(' ')}
                 >
@@ -219,6 +232,15 @@ export default function Nav({ cartCount = 0 }: { cartCount?: number }) {
                       {cartCount > 99 ? '99+' : cartCount}
                     </span>
                   )}
+                </Link>
+                <Link
+                  href={isLoggedIn ? '/account' : '/account/login'}
+                  className={[
+                    'py-4 font-sans text-[0.72rem] font-semibold uppercase tracking-[0.24em] transition-colors duration-200',
+                    pathname.startsWith('/account') ? 'text-coral' : 'text-charcoal/70 hover:text-ink',
+                  ].join(' ')}
+                >
+                  {isLoggedIn ? 'Il tuo account' : 'Accedi'}
                 </Link>
               </nav>
             </div>

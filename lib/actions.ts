@@ -1,7 +1,7 @@
 "use server"
 
 import crypto from "crypto"
-import { cookies } from "next/headers"
+import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 import {
@@ -12,9 +12,13 @@ import {
   insertCategoria, updateCategoria as dbUpdateCategoria, deleteCategoria as dbDeleteCategoria,
   getOperaBySlug,
   addCarrelloItem, removeCarrelloItem, clearCarrello,
+  updateProfilo as dbUpdateProfilo,
+  insertIndirizzo, updateIndirizzo as dbUpdateIndirizzo, deleteIndirizzo as dbDeleteIndirizzo,
 } from "@/lib/supabase/db"
-import { getOrCreateCart } from "@/lib/cart"
-import type { Disponibilita } from "@/types/db"
+import { getOrCreateCart, mergeGuestCartIntoUser } from "@/lib/cart"
+import { createServerSupabase } from "@/lib/supabase/server"
+import { getCurrentUser } from "@/lib/auth"
+import type { Disponibilita, TipoIndirizzo } from "@/types/db"
 
 function errMsg(e: unknown): string {
   if (!e) return "Errore sconosciuto"
@@ -285,4 +289,197 @@ export async function clearCartAction(): Promise<void> {
   const { carrello } = await getOrCreateCart()
   await clearCarrello(carrello.id)
   revalidatePath("/carrello")
+}
+
+// ── Auth utenti ──────────────────────────────────────────────────────────────
+
+async function getOrigin(): Promise<string> {
+  const h = await headers()
+  const proto = h.get("x-forwarded-proto") ?? "http"
+  const host  = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000"
+  return `${proto}://${host}`
+}
+
+export async function signupUser(
+  _prev: { error?: string; needsConfirm?: boolean } | null,
+  formData: FormData,
+): Promise<{ error?: string; needsConfirm?: boolean }> {
+  const email    = (formData.get("email")    as string)?.trim().toLowerCase()
+  const password = (formData.get("password") as string) ?? ""
+  const nome     = (formData.get("nome")     as string)?.trim() ?? ""
+  const cognome  = (formData.get("cognome")  as string)?.trim() ?? ""
+
+  if (!email || !password)        return { error: "Email e password obbligatorie." }
+  if (password.length < 8)        return { error: "La password deve avere almeno 8 caratteri." }
+  if (!nome)                      return { error: "Inserisci il tuo nome." }
+
+  const supabase = await createServerSupabase()
+  const origin = await getOrigin()
+  const { data, error } = await supabase.auth.signUp({
+    email, password,
+    options: {
+      data: { nome, cognome },
+      emailRedirectTo: `${origin}/auth/callback?next=/account`,
+    },
+  })
+
+  if (error) return { error: error.message }
+
+  // Se la sessione esiste subito, l'email è già confermata o la conferma è disabilitata.
+  if (data.session) {
+    await mergeGuestCartIntoUser(data.user!.id).catch(() => {})
+    redirect("/account")
+  }
+
+  return { needsConfirm: true }
+}
+
+export async function loginUser(
+  _prev: { error?: string } | null,
+  formData: FormData,
+): Promise<{ error?: string }> {
+  const email    = (formData.get("email")    as string)?.trim().toLowerCase()
+  const password = (formData.get("password") as string) ?? ""
+  const next     = (formData.get("next")     as string) || "/account"
+
+  if (!email || !password) return { error: "Email e password obbligatorie." }
+
+  const supabase = await createServerSupabase()
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  if (error) return { error: "Credenziali non valide." }
+
+  await mergeGuestCartIntoUser(data.user.id).catch(() => {})
+  revalidatePath("/", "layout")
+  redirect(next)
+}
+
+export async function logoutUser(): Promise<void> {
+  const supabase = await createServerSupabase()
+  await supabase.auth.signOut()
+  revalidatePath("/", "layout")
+  redirect("/")
+}
+
+export async function requestPasswordReset(
+  _prev: { error?: string; sent?: boolean } | null,
+  formData: FormData,
+): Promise<{ error?: string; sent?: boolean }> {
+  const email = (formData.get("email") as string)?.trim().toLowerCase()
+  if (!email) return { error: "Inserisci la tua email." }
+
+  const supabase = await createServerSupabase()
+  const origin = await getOrigin()
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/callback?next=/account/aggiorna-password`,
+  })
+  if (error) return { error: "Errore nell'invio. Riprova." }
+  return { sent: true }
+}
+
+export async function updatePasswordAction(
+  _prev: { error?: string; success?: boolean } | null,
+  formData: FormData,
+): Promise<{ error?: string; success?: boolean }> {
+  const password = (formData.get("password") as string) ?? ""
+  if (password.length < 8) return { error: "La password deve avere almeno 8 caratteri." }
+
+  const supabase = await createServerSupabase()
+  const { error } = await supabase.auth.updateUser({ password })
+  if (error) return { error: error.message }
+  return { success: true }
+}
+
+// ── Profilo ──────────────────────────────────────────────────────────────────
+
+export async function updateProfileAction(
+  _prev: { error?: string; success?: boolean } | null,
+  formData: FormData,
+): Promise<{ error?: string; success?: boolean }> {
+  const user = await getCurrentUser()
+  if (!user) return { error: "Devi essere loggato." }
+
+  try {
+    await dbUpdateProfilo(user.id, {
+      nome:            (formData.get("nome")            as string)?.trim() ?? "",
+      cognome:         (formData.get("cognome")         as string)?.trim() ?? "",
+      telefono:        (formData.get("telefono")        as string)?.trim() ?? "",
+      codice_fiscale:  (formData.get("codice_fiscale")  as string)?.trim().toUpperCase() ?? "",
+      partita_iva:     (formData.get("partita_iva")     as string)?.trim() ?? "",
+      ragione_sociale: (formData.get("ragione_sociale") as string)?.trim() ?? "",
+      codice_sdi:      (formData.get("codice_sdi")      as string)?.trim().toUpperCase() ?? "",
+      pec:             (formData.get("pec")             as string)?.trim().toLowerCase() ?? "",
+      newsletter:      formData.get("newsletter") === "on",
+    })
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Errore nel salvataggio." }
+  }
+
+  revalidatePath("/account/profilo")
+  return { success: true }
+}
+
+// ── Indirizzi ────────────────────────────────────────────────────────────────
+
+function parseIndirizzo(formData: FormData) {
+  return {
+    etichetta:    (formData.get("etichetta")    as string)?.trim() || "Casa",
+    destinatario: (formData.get("destinatario") as string)?.trim() ?? "",
+    via:          (formData.get("via")          as string)?.trim() ?? "",
+    civico:       (formData.get("civico")       as string)?.trim() ?? "",
+    cap:          (formData.get("cap")          as string)?.trim() ?? "",
+    citta:        (formData.get("citta")        as string)?.trim() ?? "",
+    provincia:    (formData.get("provincia")    as string)?.trim().toUpperCase() ?? "",
+    paese:        (formData.get("paese")        as string)?.trim().toUpperCase() || "IT",
+    telefono:     (formData.get("telefono")     as string)?.trim() ?? "",
+    predefinito:  formData.get("predefinito") === "on",
+    tipo:         ((formData.get("tipo") as string) ?? "spedizione") as TipoIndirizzo,
+  }
+}
+
+export async function addAddressAction(
+  _prev: { error?: string } | null,
+  formData: FormData,
+): Promise<{ error?: string }> {
+  const user = await getCurrentUser()
+  if (!user) return { error: "Devi essere loggato." }
+
+  const indirizzo = parseIndirizzo(formData)
+  if (!indirizzo.destinatario || !indirizzo.via || !indirizzo.cap || !indirizzo.citta) {
+    return { error: "Compila tutti i campi obbligatori." }
+  }
+
+  try {
+    await insertIndirizzo({ profilo_id: user.id, ...indirizzo })
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Errore nel salvataggio." }
+  }
+
+  revalidatePath("/account/indirizzi")
+  redirect("/account/indirizzi")
+}
+
+export async function updateAddressAction(
+  id: string,
+  _prev: { error?: string } | null,
+  formData: FormData,
+): Promise<{ error?: string }> {
+  const user = await getCurrentUser()
+  if (!user) return { error: "Devi essere loggato." }
+
+  const indirizzo = parseIndirizzo(formData)
+  try {
+    await dbUpdateIndirizzo(id, user.id, indirizzo)
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Errore nel salvataggio." }
+  }
+
+  revalidatePath("/account/indirizzi")
+  redirect("/account/indirizzi")
+}
+
+export async function deleteAddressAction(id: string): Promise<void> {
+  const user = await getCurrentUser()
+  if (!user) return
+  await dbDeleteIndirizzo(id, user.id)
+  revalidatePath("/account/indirizzi")
 }
