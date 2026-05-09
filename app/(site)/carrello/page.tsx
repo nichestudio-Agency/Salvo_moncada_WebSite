@@ -136,16 +136,14 @@ export default async function CarrelloPage() {
                 <span className="tabular-nums text-terracotta">{formatEur(subtotale)}</span>
               </div>
 
-              <button
-                type="button"
-                disabled
-                title="Disponibile a breve"
-                className="mt-6 w-full rounded-full bg-terracotta/40 px-6 py-3 font-sans text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-cream cursor-not-allowed"
+              <Link
+                href="/checkout"
+                className="mt-6 flex w-full items-center justify-center rounded-full bg-coral px-6 py-3 font-sans text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-cream shadow-[0_8px_20px_rgba(212,82,42,0.3)] transition hover:-translate-y-0.5"
               >
-                Procedi al checkout
-              </button>
+                Procedi al checkout →
+              </Link>
               <p className="mt-2 text-center font-sans text-[0.6rem] text-stone/55">
-                Checkout in arrivo nella prossima fase
+                Spedizione e pagamento sicuro nello step successivo
               </p>
             </aside>
           </div>

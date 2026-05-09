@@ -14,10 +14,14 @@ import {
   addCarrelloItem, removeCarrelloItem, clearCarrello,
   updateProfilo as dbUpdateProfilo,
   insertIndirizzo, updateIndirizzo as dbUpdateIndirizzo, deleteIndirizzo as dbDeleteIndirizzo,
+  getIndirizzo, getZonaPerPaese, insertVendita, insertVenditaItems, updateVendita, getProfilo,
 } from "@/lib/supabase/db"
-import { getOrCreateCart, mergeGuestCartIntoUser } from "@/lib/cart"
+import { getCart, getOrCreateCart, mergeGuestCartIntoUser } from "@/lib/cart"
 import { createServerSupabase } from "@/lib/supabase/server"
 import { getCurrentUser } from "@/lib/auth"
+import { getStripe } from "@/lib/stripe"
+import { calcolaCostoSpedizione } from "@/lib/checkout"
+import { isValidImageUrl } from "@/lib/images"
 import type { Disponibilita, TipoIndirizzo } from "@/types/db"
 
 function errMsg(e: unknown): string {
@@ -492,4 +496,183 @@ export async function deleteAddressAction(id: string): Promise<void> {
   if (!user) return
   await dbDeleteIndirizzo(id, user.id)
   revalidatePath("/account/indirizzi")
+}
+
+// ── Checkout ─────────────────────────────────────────────────────────────────
+
+export async function createCheckoutSession(
+  _prev: { error?: string } | null,
+  formData: FormData,
+): Promise<{ error?: string }> {
+  const user = await getCurrentUser()
+  if (!user) return { error: "Devi essere loggato per acquistare." }
+
+  const indirizzoId = (formData.get("indirizzo_id") as string)?.trim()
+  if (!indirizzoId) return { error: "Seleziona un indirizzo di spedizione." }
+
+  // 1. Indirizzo + carrello + profilo
+  const [indirizzo, profilo, cart] = await Promise.all([
+    getIndirizzo(indirizzoId, user.id),
+    getProfilo(user.id),
+    getCart(),
+  ])
+  if (!indirizzo) return { error: "Indirizzo non valido." }
+  if (!profilo)   return { error: "Profilo non trovato." }
+  if (cart.items.length === 0) return { error: "Il carrello è vuoto." }
+
+  // 2. Validazione inventario
+  for (const item of cart.items) {
+    if (!item.opera) return { error: "Un'opera nel carrello non è più disponibile." }
+    if (item.opera.disponibilita !== "disponibile") {
+      return { error: `"${item.opera.titolo}" non è più disponibile.` }
+    }
+    if (item.opera.riservata_fino && new Date(item.opera.riservata_fino) > new Date()) {
+      return { error: `"${item.opera.titolo}" è in attesa di pagamento da un altro acquirente. Riprova tra 30 minuti.` }
+    }
+  }
+
+  // 3. Calcolo spedizione
+  const zona = await getZonaPerPaese(indirizzo.paese)
+  if (!zona) return { error: `Spedizione non disponibile per ${indirizzo.paese}.` }
+
+  const subtotale        = cart.subtotale
+  const costoSpedizione  = calcolaCostoSpedizione(zona, subtotale)
+  const totale           = subtotale + costoSpedizione
+
+  // 4. Snapshot indirizzo (jsonb)
+  const indirizzoSnap = {
+    etichetta:    indirizzo.etichetta,
+    destinatario: indirizzo.destinatario,
+    via:          indirizzo.via,
+    civico:       indirizzo.civico,
+    cap:          indirizzo.cap,
+    citta:        indirizzo.citta,
+    provincia:    indirizzo.provincia,
+    paese:        indirizzo.paese,
+    telefono:     indirizzo.telefono,
+    tipo:         indirizzo.tipo,
+  }
+
+  const datiFattura = {
+    codice_fiscale:  profilo.codice_fiscale,
+    partita_iva:     profilo.partita_iva,
+    ragione_sociale: profilo.ragione_sociale,
+    codice_sdi:      profilo.codice_sdi,
+    pec:             profilo.pec,
+  }
+
+  // 5. Crea vendita pending
+  let vendita
+  try {
+    vendita = await insertVendita({
+      profilo_id:             user.id,
+      email:                  user.email,
+      nome:                   profilo.nome,
+      cognome:                profilo.cognome,
+      telefono:               profilo.telefono,
+      indirizzo_spedizione:   indirizzoSnap,
+      indirizzo_fatturazione: indirizzoSnap,
+      dati_fattura:           datiFattura,
+      subtotale,
+      costo_spedizione:       costoSpedizione,
+      totale,
+      valuta:                 "EUR",
+      zona_spedizione_id:     zona.id,
+      corriere:               "",
+      tracking_numero:        "",
+      stripe_session_id:        null,
+      stripe_payment_intent_id: null,
+      metodo_pagamento:       "stripe",
+      stato:                  "pending_payment",
+      note_cliente:           (formData.get("note") as string)?.trim() ?? "",
+      note_admin:             "",
+      pagato_il:              null,
+      spedito_il:             null,
+      consegnato_il:          null,
+      cancellato_il:          null,
+    })
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Impossibile creare l'ordine." }
+  }
+
+  // 6. Snapshot delle righe ordine
+  await insertVenditaItems(cart.items.map((item) => ({
+    vendita_id:      vendita.id,
+    opera_id:        item.opera_id,
+    opera_slug:      item.opera!.slug,
+    opera_titolo:    item.opera!.titolo,
+    opera_immagine:  item.opera!.immagini[0] ?? "",
+    prezzo_unitario: item.prezzo_snapshot,
+    quantita:        item.quantita,
+    totale_riga:     item.prezzo_snapshot * item.quantita,
+  })))
+
+  // 7. Lock inventario per 30 minuti
+  const riservataFino = new Date(Date.now() + 30 * 60 * 1000).toISOString()
+  for (const item of cart.items) {
+    await updateOpera(item.opera!.slug, {
+      disponibilita:            "riservata",
+      riservata_fino:           riservataFino,
+      riservata_per_vendita_id: vendita.id,
+    })
+  }
+
+  // 8. Stripe Checkout Session
+  const origin = await getOrigin()
+  const stripe = getStripe()
+
+  const lineItems = cart.items.map((item) => ({
+    price_data: {
+      currency: "eur",
+      unit_amount: item.prezzo_snapshot,
+      product_data: {
+        name: item.opera!.titolo,
+        description: item.opera!.tecnica || undefined,
+        images: item.opera!.immagini.filter(isValidImageUrl).slice(0, 1),
+      },
+    },
+    quantity: item.quantita,
+  }))
+
+  let session
+  try {
+    session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_method_types: ["card"],
+      customer_email: user.email,
+      line_items: lineItems,
+      shipping_options: [{
+        shipping_rate_data: {
+          type: "fixed_amount",
+          fixed_amount: { amount: costoSpedizione, currency: "eur" },
+          display_name: `Spedizione ${zona.nome}${costoSpedizione === 0 ? " (gratuita)" : ""}`,
+        },
+      }],
+      success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url:  `${origin}/checkout/cancel?session_id={CHECKOUT_SESSION_ID}`,
+      metadata: {
+        vendita_id:  vendita.id,
+        profilo_id:  user.id,
+        carrello_id: cart.carrello?.id ?? "",
+      },
+      expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
+      locale: "it",
+    })
+  } catch (e) {
+    // Stripe non riuscita: rilascia lock inventario e segna vendita cancellata
+    for (const item of cart.items) {
+      await updateOpera(item.opera!.slug, {
+        disponibilita:            "disponibile",
+        riservata_fino:           null,
+        riservata_per_vendita_id: null,
+      })
+    }
+    await updateVendita(vendita.id, { stato: "cancelled", cancellato_il: new Date().toISOString() })
+    return { error: e instanceof Error ? e.message : "Errore Stripe." }
+  }
+
+  await updateVendita(vendita.id, { stripe_session_id: session.id })
+
+  if (!session.url) return { error: "Stripe non ha restituito un URL di checkout." }
+  redirect(session.url)
 }

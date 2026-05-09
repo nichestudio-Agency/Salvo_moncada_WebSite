@@ -294,6 +294,14 @@ export async function updateVendita(id: string, updates: Partial<Omit<Vendita, '
   if (error) throw error
 }
 
+export async function insertVendita(
+  vendita: Omit<Vendita, 'id' | 'numero' | 'created_at' | 'updated_at'>,
+): Promise<Vendita> {
+  const { data, error } = await supabase.from('vendite').insert(vendita).select('*').single()
+  if (error || !data) throw error ?? new Error('Vendita non creata')
+  return data as Vendita
+}
+
 export async function insertVenditaItems(items: Omit<VenditaItem, 'id' | 'created_at'>[]): Promise<void> {
   if (items.length === 0) return
   const { error } = await supabase.from('vendite_items').insert(items)
