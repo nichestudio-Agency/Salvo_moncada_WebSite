@@ -1,5 +1,5 @@
 import { supabaseAdmin as supabase } from './admin'
-import { sanitizeImmagini } from '@/lib/images'
+import { sanitizeImmagini, sanitizeText, looksCorrupted } from '@/lib/images'
 import type {
   Opera, Ordine, OrdineStatus, Messaggio, Categoria,
   Profilo, Indirizzo, Carrello, CarrelloItem, ZonaSpedizione, Vendita, VenditaItem,
@@ -8,11 +8,25 @@ import type {
 export type CarrelloItemConOpera = CarrelloItem & { opera: Opera | null }
 
 // Normalizza una riga "opere" prima che venga restituita dai getter.
-// Importante: filtra eventuali URL immagine corrotte (es. concatenazioni
-// rimaste da vecchi bug) così la UI non mostra mai stringhe non valide.
-function normalizeOpera<T extends { immagini?: unknown } | null>(row: T): T {
+// Filtra URL immagine corrotte (concatenazioni residue) E azzera campi
+// testo che contengono URL multiple ripetute (corruzione finita per
+// sbaglio in titolo/descrizione/sottotitolo/tecnica).
+function normalizeOpera<T extends { immagini?: unknown; titolo?: unknown; sottotitolo?: unknown; descrizione?: unknown; tecnica?: unknown; slug?: unknown } | null>(row: T): T {
   if (!row) return row
-  return { ...row, immagini: sanitizeImmagini(row.immagini) } as T
+  const slug = typeof row.slug === 'string' ? row.slug : '?'
+  for (const field of ['titolo', 'sottotitolo', 'descrizione', 'tecnica'] as const) {
+    if (looksCorrupted(row[field])) {
+      console.warn(`[opera/${slug}] campo "${field}" sembra corrotto (URL ripetute), azzerato in lettura`)
+    }
+  }
+  return {
+    ...row,
+    immagini:    sanitizeImmagini(row.immagini),
+    titolo:      sanitizeText(row.titolo),
+    sottotitolo: sanitizeText(row.sottotitolo),
+    descrizione: sanitizeText(row.descrizione),
+    tecnica:     sanitizeText(row.tecnica),
+  } as T
 }
 
 // ── Opere ────────────────────────────────────────────────────────────────────

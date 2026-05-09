@@ -38,3 +38,25 @@ export function sanitizeImmagini(immagini: unknown): string[] {
   if (!Array.isArray(immagini)) return [];
   return immagini.filter(isValidImageUrl);
 }
+
+// Riconosce stringhe che sembrano URL concatenate finite per errore in
+// un campo di testo (titolo, sottotitolo, descrizione, tecnica). Esempio
+// reale visto in produzione: "dhttps://x.supabase.cohttps://x.supabase.co…"
+// con 6 ripetizioni dello stesso host.
+//
+// Soglia: 2+ "https://" nello stesso valore E almeno il 60% della stringa
+// è composta da URL → corruzione, non contenuto legittimo.
+export function looksCorrupted(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  const matches = value.match(/https?:\/\//gi);
+  if (!matches || matches.length < 2) return false;
+  const urlPart = (value.match(/https?:\/\/[^\s]+/g) ?? []).join("");
+  return urlPart.length >= value.length * 0.6;
+}
+
+// Restituisce una stringa pulita: se sembra corrotta, ritorna stringa vuota.
+export function sanitizeText(value: unknown, fallback = ""): string {
+  if (typeof value !== "string") return fallback;
+  if (looksCorrupted(value)) return fallback;
+  return value;
+}
