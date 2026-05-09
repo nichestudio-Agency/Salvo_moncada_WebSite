@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 import { adminLogout } from "@/lib/actions";
 import type { ReactNode } from "react";
 
@@ -112,6 +113,19 @@ export default function AdminSidebar({
   ordiniNuovi: number;
 }) {
   const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
+  const totalBadge = messaggiNonLetti + ordiniNuovi;
+
+  // Chiudi il drawer al cambio rotta.
+  useEffect(() => { setIsOpen(false); }, [pathname]);
+
+  // Lock body scroll quando il drawer è aperto.
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = ""; };
+    }
+  }, [isOpen]);
 
   const items: NavItem[] = [
     { href: "/admin", label: "Dashboard", icon: <IconDashboard /> },
@@ -128,19 +142,100 @@ export default function AdminSidebar({
   }
 
   return (
-    <aside
-      style={{
-        width: 240,
-        flexShrink: 0,
-        background: "#0C0A07",
-        borderRight: "1px solid rgba(237,232,224,0.07)",
-        display: "flex",
-        flexDirection: "column",
-        position: "sticky",
-        top: 0,
-        height: "100vh",
-      }}
-    >
+    <>
+      {/* Mobile top bar — solo < md */}
+      <div
+        className="md:hidden"
+        style={{
+          position: "fixed",
+          top: 0, left: 0, right: 0,
+          zIndex: 60,
+          height: 56,
+          background: "#0C0A07",
+          borderBottom: "1px solid rgba(237,232,224,0.07)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 1rem",
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setIsOpen((v) => !v)}
+          aria-label={isOpen ? "Chiudi menu" : "Apri menu"}
+          style={{
+            position: "relative",
+            background: "none",
+            border: "none",
+            padding: 6,
+            color: "rgba(237,232,224,0.85)",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+            <path d="M3 6h18M3 12h18M3 18h18" />
+          </svg>
+          {totalBadge > 0 && !isOpen && (
+            <span
+              style={{
+                position: "absolute", top: 2, right: 2,
+                width: 8, height: 8,
+                background: "#C4783C",
+                borderRadius: 999,
+              }}
+            />
+          )}
+        </button>
+        <Link
+          href="/admin"
+          style={{
+            fontFamily: "var(--font-cormorant)",
+            fontSize: "1rem",
+            fontWeight: 300,
+            color: "rgba(237,232,224,0.92)",
+            letterSpacing: "0.06em",
+            textDecoration: "none",
+          }}
+        >
+          Salvo Moncada
+        </Link>
+        <span style={{ width: 32 }} aria-hidden />
+      </div>
+
+      {/* Backdrop mobile */}
+      {isOpen && (
+        <div
+          className="md:hidden"
+          onClick={() => setIsOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.55)",
+            zIndex: 70,
+          }}
+        />
+      )}
+
+      <aside
+        className={[
+          "max-md:fixed max-md:top-0 max-md:left-0 max-md:z-[80] max-md:transition-transform max-md:duration-200",
+          isOpen ? "max-md:translate-x-0" : "max-md:-translate-x-full",
+        ].join(" ")}
+        style={{
+          width: 240,
+          flexShrink: 0,
+          background: "#0C0A07",
+          borderRight: "1px solid rgba(237,232,224,0.07)",
+          display: "flex",
+          flexDirection: "column",
+          position: "sticky",
+          top: 0,
+          height: "100vh",
+        }}
+      >
       <div style={{ padding: "1.6rem 1.4rem 1.2rem", borderBottom: "1px solid rgba(237,232,224,0.07)" }}>
         <Link href="/admin" style={{ textDecoration: "none", display: "block" }}>
           <p
@@ -244,6 +339,7 @@ export default function AdminSidebar({
           </button>
         </form>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

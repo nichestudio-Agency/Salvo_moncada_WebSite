@@ -132,26 +132,47 @@ export default function Nav({ cartCount = 0 }: { cartCount?: number }) {
                     </Link>
                   </nav>
 
-                  {/* Mobile hamburger */}
-                  <button
-                    className="text-ink md:hidden"
-                    aria-label={mobileOpen ? 'Chiudi menu' : 'Apri menu'}
-                    onClick={() => setMobileOpen((v) => !v)}
-                    type="button"
-                  >
-                    <span className="flex flex-col gap-[5px]">
-                      <motion.span
-                        animate={mobileOpen ? { rotate: 45, y: 5 } : { rotate: 0, y: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="block h-px w-6 bg-current"
-                      />
-                      <motion.span
-                        animate={mobileOpen ? { rotate: -45, y: -5 } : { rotate: 0, y: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="block h-px w-6 bg-current"
-                      />
-                    </span>
-                  </button>
+                  {/* Mobile cart icon + hamburger */}
+                  <div className="flex items-center gap-4 md:hidden">
+                    <Link
+                      href="/carrello"
+                      aria-label={`Carrello (${cartCount})`}
+                      className={[
+                        'relative inline-flex items-center justify-center transition-colors duration-300',
+                        pathname === '/carrello' ? 'text-coral' : 'text-charcoal/80 hover:text-ink',
+                      ].join(' ')}
+                    >
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 4h2l2.5 12.5a2 2 0 0 0 2 1.5h8a2 2 0 0 0 2-1.5L21 8H6" />
+                        <circle cx="10" cy="20.5" r="1.2" />
+                        <circle cx="17" cy="20.5" r="1.2" />
+                      </svg>
+                      {cartCount > 0 && (
+                        <span className="absolute -right-2 -top-1 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-terracotta px-1.5 text-[0.58rem] font-semibold leading-none text-cream">
+                          {cartCount > 99 ? '99+' : cartCount}
+                        </span>
+                      )}
+                    </Link>
+                    <button
+                      className="text-ink"
+                      aria-label={mobileOpen ? 'Chiudi menu' : 'Apri menu'}
+                      onClick={() => setMobileOpen((v) => !v)}
+                      type="button"
+                    >
+                      <span className="flex flex-col gap-[5px]">
+                        <motion.span
+                          animate={mobileOpen ? { rotate: 45, y: 5 } : { rotate: 0, y: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="block h-px w-6 bg-current"
+                        />
+                        <motion.span
+                          animate={mobileOpen ? { rotate: -45, y: -5 } : { rotate: 0, y: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="block h-px w-6 bg-current"
+                        />
+                      </span>
+                    </button>
+                  </div>
 
                 </div>
               </div>

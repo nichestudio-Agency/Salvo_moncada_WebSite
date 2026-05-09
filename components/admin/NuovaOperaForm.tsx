@@ -36,7 +36,7 @@ export default function NuovaOperaForm({ categorie }: { categorie: Categoria[] }
           </p>
         )}
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
           <div style={{ gridColumn: "1 / -1" }}>
             <label style={labelStyle} htmlFor="titolo">Titolo *</label>
             <input id="titolo" name="titolo" required style={inputStyle} placeholder="La Pescheria del Porto" />

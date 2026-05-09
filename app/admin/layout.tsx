@@ -18,7 +18,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div style={{ minHeight: "100vh", background: "#FAF8F4", display: "flex" }}>
       <AdminSidebar messaggiNonLetti={messaggiNonLetti} ordiniNuovi={ordiniNuovi} />
-      <main style={{ flex: 1, minWidth: 0, padding: "2.5rem clamp(1.5rem, 3.5vw, 3rem)" }}>
+      <main
+        className="pt-20 md:pt-10 pb-10"
+        style={{
+          flex: 1,
+          minWidth: 0,
+          paddingLeft:  "clamp(1rem, 3.5vw, 3rem)",
+          paddingRight: "clamp(1rem, 3.5vw, 3rem)",
+        }}
+      >
         {children}
       </main>
     </div>
