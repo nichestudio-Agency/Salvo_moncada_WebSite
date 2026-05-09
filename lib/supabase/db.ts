@@ -1,10 +1,19 @@
 import { supabaseAdmin as supabase } from './admin'
+import { sanitizeImmagini } from '@/lib/images'
 import type {
   Opera, Ordine, OrdineStatus, Messaggio, Categoria,
   Profilo, Indirizzo, Carrello, CarrelloItem, ZonaSpedizione, Vendita, VenditaItem,
 } from '@/types/db'
 
 export type CarrelloItemConOpera = CarrelloItem & { opera: Opera | null }
+
+// Normalizza una riga "opere" prima che venga restituita dai getter.
+// Importante: filtra eventuali URL immagine corrotte (es. concatenazioni
+// rimaste da vecchi bug) così la UI non mostra mai stringhe non valide.
+function normalizeOpera<T extends { immagini?: unknown } | null>(row: T): T {
+  if (!row) return row
+  return { ...row, immagini: sanitizeImmagini(row.immagini) } as T
+}
 
 // ── Opere ────────────────────────────────────────────────────────────────────
 
@@ -14,7 +23,7 @@ export async function getOpere(): Promise<Opera[]> {
     .select('*')
     .order('created_at', { ascending: false })
   if (error) throw error
-  return data ?? []
+  return (data ?? []).map(normalizeOpera) as Opera[]
 }
 
 export async function getOperaBySlug(slug: string): Promise<Opera | null> {
@@ -23,7 +32,7 @@ export async function getOperaBySlug(slug: string): Promise<Opera | null> {
     .select('*')
     .eq('slug', slug)
     .single()
-  return data ?? null
+  return data ? (normalizeOpera(data) as Opera) : null
 }
 
 export async function getOpereInEvidenza(): Promise<Opera[]> {
@@ -33,7 +42,7 @@ export async function getOpereInEvidenza(): Promise<Opera[]> {
     .eq('in_evidenza', true)
     .order('created_at', { ascending: false })
     .limit(6)
-  return data ?? []
+  return (data ?? []).map(normalizeOpera) as Opera[]
 }
 
 export async function insertOpera(
@@ -308,7 +317,10 @@ export async function getCarrelloItems(carrelloId: string): Promise<CarrelloItem
     .eq('carrello_id', carrelloId)
     .order('created_at', { ascending: true })
   if (error) throw error
-  return (data ?? []) as CarrelloItemConOpera[]
+  return ((data ?? []) as CarrelloItemConOpera[]).map((row) => ({
+    ...row,
+    opera: row.opera ? (normalizeOpera(row.opera) as Opera) : null,
+  }))
 }
 
 export async function addCarrelloItem(carrelloId: string, operaId: string, prezzoSnapshot: number): Promise<void> {

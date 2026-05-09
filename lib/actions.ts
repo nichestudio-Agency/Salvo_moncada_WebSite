@@ -197,6 +197,16 @@ export async function deleteArtwork(slug: string) {
   revalidatePath("/admin/prodotti")
 }
 
+// Pulisce le immagini di un'opera (azzera l'array). Da usare quando i dati
+// stored sono corrotti (es. URL multiple concatenate da bug passati). Dopo
+// questo, Salvo deve ricaricare la foto via il form di edit.
+export async function resetArtworkImages(slug: string): Promise<void> {
+  await updateOpera(slug, { immagini: [] })
+  revalidatePath("/opere")
+  revalidatePath("/")
+  revalidatePath("/admin/prodotti")
+}
+
 // ── Messaggi ─────────────────────────────────────────────────────────────────
 
 export async function markMessaggioLetto(id: string, letto: boolean) {
