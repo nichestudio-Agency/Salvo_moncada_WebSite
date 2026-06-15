@@ -22,7 +22,6 @@ const oggetti = [
   'Acquisto opera',
   'Commissione personalizzata',
   'Informazioni generali',
-  'Stampa e media',
 ]
 
 function Field({
