@@ -58,10 +58,10 @@ export default function ContattiPage() {
                 Email
               </p>
               <a
-                href="mailto:info@salvomoncada.it"
+                href="mailto:moncadasalvo71@gmail.com"
                 className="font-body text-base text-ivory/70 transition-colors duration-200 hover:text-gold"
               >
-                info@salvomoncada.it
+                moncadasalvo71@gmail.com
               </a>
             </div>
 

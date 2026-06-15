@@ -86,9 +86,9 @@ export default function Footer() {
             </p>
             <ul className="flex flex-col gap-3">
               <li>
-                <a href="mailto:info@salvomoncada.it"
+                <a href="mailto:moncadasalvo71@gmail.com"
                   className="font-sans text-sm text-ivory/45 transition-colors duration-200 hover:text-ivory">
-                  info@salvomoncada.it
+                  moncadasalvo71@gmail.com
                 </a>
               </li>
               <li>
