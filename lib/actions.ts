@@ -109,6 +109,7 @@ export async function createArtwork(
   }
 
   revalidatePath("/opere")
+  revalidatePath("/contatti")
   revalidatePath("/")
   redirect("/admin/prodotti")
 }
@@ -150,6 +151,7 @@ export async function updateArtwork(
 
   revalidatePath("/opere")
   revalidatePath(`/opere/${slug}`)
+  revalidatePath("/contatti")
   revalidatePath("/")
   redirect("/admin/prodotti")
 }
@@ -157,6 +159,7 @@ export async function updateArtwork(
 export async function deleteArtwork(slug: string) {
   await deleteOpera(slug)
   revalidatePath("/opere")
+  revalidatePath("/contatti")
   revalidatePath("/")
   revalidatePath("/admin/prodotti")
 }
