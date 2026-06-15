@@ -32,6 +32,25 @@ export async function getOpere(): Promise<Opera[]> {
   return (data ?? []).map(normalizeOpera) as Opera[]
 }
 
+// Campi minimi per la lista admin — esclude descrizione e immagini pesanti
+export async function getOpereAdmin(): Promise<Opera[]> {
+  const { data, error } = await supabase
+    .from('opere')
+    .select('id,slug,titolo,tecnica,anno,disponibilita,prezzo,visualizzazioni,immagini,in_evidenza,created_at')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []).map(normalizeOpera) as Opera[]
+}
+
+// Solo i campi aggregabili per la dashboard — esclude immagini e testi
+export async function getOpereStats(): Promise<Pick<Opera, 'disponibilita' | 'prezzo' | 'visualizzazioni'>[]> {
+  const { data, error } = await supabase
+    .from('opere')
+    .select('disponibilita,prezzo,visualizzazioni')
+  if (error) throw error
+  return (data ?? []) as Pick<Opera, 'disponibilita' | 'prezzo' | 'visualizzazioni'>[]
+}
+
 export async function getOperaBySlug(slug: string): Promise<Opera | null> {
   const { data } = await supabase
     .from('opere')
@@ -110,6 +129,17 @@ export async function getMessaggi(): Promise<Messaggio[]> {
     .order('created_at', { ascending: false })
   if (error) throw error
   return data ?? []
+}
+
+// Solo gli ultimi messaggi per la dashboard
+export async function getMessaggiRecenti(limit = 6): Promise<Messaggio[]> {
+  const { data, error } = await supabase
+    .from('messaggi')
+    .select('id,nome,cognome,email,oggetto,messaggio,letto,created_at')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return (data ?? []) as unknown as Messaggio[]
 }
 
 export async function insertMessaggio(msg: Omit<Messaggio, 'id' | 'created_at' | 'letto'>): Promise<void> {

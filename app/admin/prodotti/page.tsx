@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getOpere } from "@/lib/supabase/db";
+import { getOpereAdmin } from "@/lib/supabase/db";
 import { deleteArtwork } from "@/lib/actions";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +19,7 @@ const disponibilitaLabel: Record<string, { label: string; color: string; bg: str
 };
 
 export default async function AdminProdottiPage() {
-  const opere = await getOpere().catch(() => []);
+  const opere = await getOpereAdmin().catch(() => []);
 
   return (
     <div style={{ maxWidth: 1000 }}>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getOpere, getMessaggi } from "@/lib/supabase/db";
+import { getOpereStats, getMessaggiRecenti } from "@/lib/supabase/db";
 import type { Messaggio } from "@/types/db";
 
 export const dynamic = "force-dynamic";
@@ -238,8 +238,8 @@ function ActivityTimeline({ messaggi }: { messaggi: Messaggio[] }) {
 
 export default async function AdminDashboard() {
   const [opere, messaggi] = await Promise.all([
-    getOpere().catch(() => []),
-    getMessaggi().catch(() => []),
+    getOpereStats().catch(() => []),
+    getMessaggiRecenti(6).catch(() => []),
   ]);
 
   const disponibili = opere.filter((o) => o.disponibilita === "disponibile").length;
@@ -248,7 +248,7 @@ export default async function AdminDashboard() {
   const nonInVend   = opere.filter((o) => o.disponibilita === "non_in_vendita").length;
   const nonLetti    = messaggi.filter((m) => !m.letto).length;
   const valoreDisp  = opere.filter((o) => o.disponibilita === "disponibile").reduce((s, o) => s + (o.prezzo ?? 0), 0);
-  const totalViews  = opere.reduce((s, o) => s + (o.visualizzazioni ?? 0), 0);
+  const totalViews  = opere.reduce((s, o) => s + ((o.visualizzazioni as number | null) ?? 0), 0);
 
   const oggi = new Date().toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" });
 
@@ -292,7 +292,7 @@ export default async function AdminDashboard() {
           label="Messaggi non letti"
           value={nonLetti}
           accent={nonLetti > 0}
-          sub={`${messaggi.length} totali`}
+          sub={nonLetti === 0 ? "Tutti letti" : undefined}
           icon={
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="5" width="18" height="14" rx="2" />
