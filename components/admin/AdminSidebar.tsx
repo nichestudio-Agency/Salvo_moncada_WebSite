@@ -107,14 +107,12 @@ function Badge({ value }: { value: number }) {
 
 export default function AdminSidebar({
   messaggiNonLetti,
-  ordiniNuovi,
 }: {
   messaggiNonLetti: number;
-  ordiniNuovi: number;
 }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const totalBadge = messaggiNonLetti + ordiniNuovi;
+  const totalBadge = messaggiNonLetti;
 
   // Chiudi il drawer al cambio rotta.
   useEffect(() => { setIsOpen(false); }, [pathname]);
@@ -130,7 +128,6 @@ export default function AdminSidebar({
   const items: NavItem[] = [
     { href: "/admin", label: "Dashboard", icon: <IconDashboard /> },
     { href: "/admin/prodotti", label: "Prodotti", icon: <IconArt /> },
-    { href: "/admin/ordini", label: "Ordini", icon: <IconCart />, badge: ordiniNuovi },
     { href: "/admin/messaggi", label: "Messaggi", icon: <IconMail />, badge: messaggiNonLetti },
     { href: "/admin/categorie", label: "Categorie", icon: <IconTag /> },
     { href: "/admin/statistiche", label: "Statistiche", icon: <IconChart /> },

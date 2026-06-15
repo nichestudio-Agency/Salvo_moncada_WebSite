@@ -130,7 +130,7 @@ export default function Hero() {
             Scopri le Opere
           </Link>
           <Link
-            href="/ordina"
+            href="/contatti"
             style={{
               fontFamily: "var(--font-inter)",
               fontSize: "0.7rem",
@@ -143,7 +143,7 @@ export default function Hero() {
               transition: "border-color 0.2s, color 0.2s",
             }}
           >
-            Ordina un&apos;Opera
+            Contatti
           </Link>
         </motion.div>
       </div>

@@ -12,7 +12,7 @@ const links = [
   { href: '/contatti', label: 'Contatti' },
 ]
 
-export default function Nav({ cartCount = 0, isLoggedIn = false }: { cartCount?: number; isLoggedIn?: boolean }) {
+export default function Nav() {
   const [visible, setVisible] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const pathname = usePathname()
@@ -111,61 +111,10 @@ export default function Nav({ cartCount = 0, isLoggedIn = false }: { cartCount?:
                         )}
                       </Link>
                     ))}
-                    <Link
-                      href={isLoggedIn ? '/account' : '/account/login'}
-                      aria-label={isLoggedIn ? 'Il tuo account' : 'Accedi'}
-                      className={[
-                        'inline-flex items-center justify-center transition-colors duration-300',
-                        pathname.startsWith('/account') ? 'text-coral' : 'text-charcoal/70 hover:text-ink',
-                      ].join(' ')}
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="8" r="4" />
-                        <path d="M4 21c0-4 4-7 8-7s8 3 8 7" />
-                      </svg>
-                    </Link>
-                    <Link
-                      href="/carrello"
-                      aria-label={`Carrello (${cartCount})`}
-                      className={[
-                        'relative inline-flex items-center justify-center transition-colors duration-300',
-                        pathname === '/carrello' ? 'text-coral' : 'text-charcoal/70 hover:text-ink',
-                      ].join(' ')}
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M3 4h2l2.5 12.5a2 2 0 0 0 2 1.5h8a2 2 0 0 0 2-1.5L21 8H6" />
-                        <circle cx="10" cy="20.5" r="1.2" />
-                        <circle cx="17" cy="20.5" r="1.2" />
-                      </svg>
-                      {cartCount > 0 && (
-                        <span className="absolute -right-2 -top-1 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-terracotta px-1.5 text-[0.58rem] font-semibold leading-none text-cream">
-                          {cartCount > 99 ? '99+' : cartCount}
-                        </span>
-                      )}
-                    </Link>
                   </nav>
 
-                  {/* Mobile cart icon + hamburger */}
+                  {/* Mobile hamburger */}
                   <div className="flex items-center gap-4 md:hidden">
-                    <Link
-                      href="/carrello"
-                      aria-label={`Carrello (${cartCount})`}
-                      className={[
-                        'relative inline-flex items-center justify-center transition-colors duration-300',
-                        pathname === '/carrello' ? 'text-coral' : 'text-charcoal/80 hover:text-ink',
-                      ].join(' ')}
-                    >
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M3 4h2l2.5 12.5a2 2 0 0 0 2 1.5h8a2 2 0 0 0 2-1.5L21 8H6" />
-                        <circle cx="10" cy="20.5" r="1.2" />
-                        <circle cx="17" cy="20.5" r="1.2" />
-                      </svg>
-                      {cartCount > 0 && (
-                        <span className="absolute -right-2 -top-1 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-terracotta px-1.5 text-[0.58rem] font-semibold leading-none text-cream">
-                          {cartCount > 99 ? '99+' : cartCount}
-                        </span>
-                      )}
-                    </Link>
                     <button
                       className="text-ink"
                       aria-label={mobileOpen ? 'Chiudi menu' : 'Apri menu'}
@@ -219,29 +168,6 @@ export default function Nav({ cartCount = 0, isLoggedIn = false }: { cartCount?:
                     {link.label}
                   </Link>
                 ))}
-                <Link
-                  href="/carrello"
-                  className={[
-                    'flex items-center justify-between border-b border-black/6 py-4 font-sans text-[0.72rem] font-semibold uppercase tracking-[0.24em] transition-colors duration-200',
-                    pathname === '/carrello' ? 'text-coral' : 'text-charcoal/70 hover:text-ink',
-                  ].join(' ')}
-                >
-                  <span>Carrello</span>
-                  {cartCount > 0 && (
-                    <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-terracotta px-1.5 text-[0.62rem] text-cream">
-                      {cartCount > 99 ? '99+' : cartCount}
-                    </span>
-                  )}
-                </Link>
-                <Link
-                  href={isLoggedIn ? '/account' : '/account/login'}
-                  className={[
-                    'py-4 font-sans text-[0.72rem] font-semibold uppercase tracking-[0.24em] transition-colors duration-200',
-                    pathname.startsWith('/account') ? 'text-coral' : 'text-charcoal/70 hover:text-ink',
-                  ].join(' ')}
-                >
-                  {isLoggedIn ? 'Il tuo account' : 'Accedi'}
-                </Link>
               </nav>
             </div>
           </motion.div>

@@ -371,7 +371,7 @@ export default function ChiSonoSection() {
             unica e nasce da un dialogo diretto con Salvo.
           </p>
           <Link
-            href="/ordina"
+            href="/contatti"
             style={{
               fontFamily: "var(--font-inter)",
               fontSize: "0.68rem",
@@ -384,7 +384,7 @@ export default function ChiSonoSection() {
               display: "inline-block",
             }}
           >
-            Inizia la tua commissione
+            Contattami
           </Link>
         </AnimatedSection>
       </section>

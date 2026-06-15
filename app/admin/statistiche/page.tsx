@@ -1,4 +1,4 @@
-import { getOpere, getOrdini, getMessaggi } from "@/lib/supabase/db";
+import { getOpere, getMessaggi } from "@/lib/supabase/db";
 
 export const dynamic = "force-dynamic";
 
@@ -36,9 +36,8 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 }
 
 export default async function StatistichePage() {
-  const [opere, ordini, messaggi] = await Promise.all([
+  const [opere, messaggi] = await Promise.all([
     getOpere().catch(() => []),
-    getOrdini().catch(() => []),
     getMessaggi().catch(() => []),
   ]);
 
@@ -49,11 +48,6 @@ export default async function StatistichePage() {
   const valoreDisp     = disponibili.reduce((s, o) => s + (o.prezzo ?? 0), 0);
   const valoreVenduto  = vendute.reduce((s, o) => s + (o.prezzo ?? 0), 0);
   const totaleViews    = opere.reduce((s, o) => s + (o.visualizzazioni ?? 0), 0);
-
-  // ── Statistiche ordini ──
-  const ordiniCompletati  = ordini.filter((o) => o.status === "completato").length;
-  const ordiniNuovi       = ordini.filter((o) => o.status === "nuovo").length;
-  const conversionRate    = ordini.length > 0 ? Math.round((ordiniCompletati / ordini.length) * 100) : 0;
 
   // ── Top opere per visualizzazioni ──
   const topOpere = [...opere]
@@ -155,13 +149,9 @@ export default async function StatistichePage() {
         </div>
       )}
 
-      {/* ── Ordini ── */}
-      <SectionTitle>Ordini e commissioni</SectionTitle>
+      {/* ── Messaggi ── */}
+      <SectionTitle>Messaggi</SectionTitle>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: "1rem" }}>
-        <StatBox label="Ordini totali" value={ordini.length} />
-        <StatBox label="Nuovi" value={ordiniNuovi} highlight={ordiniNuovi > 0} />
-        <StatBox label="Completati" value={ordiniCompletati} />
-        <StatBox label="Tasso completamento" value={`${conversionRate}%`} sub="Completati / totale" />
         <StatBox label="Messaggi ricevuti" value={messaggi.length} />
         <StatBox label="Non letti" value={messaggi.filter((m) => !m.letto).length} />
       </div>

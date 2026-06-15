@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { getOpere, getOrdini, getMessaggi } from "@/lib/supabase/db";
-import type { Ordine, Messaggio } from "@/types/db";
+import { getOpere, getMessaggi } from "@/lib/supabase/db";
+import type { Messaggio } from "@/types/db";
 
 export const dynamic = "force-dynamic";
 
@@ -26,15 +26,6 @@ const COLORS = {
 const FONT_DISPLAY = "var(--font-cormorant)";
 const FONT_BODY = "var(--font-inter)";
 
-const statusColor: Record<string, { bg: string; color: string; border: string }> = {
-  nuovo:            { bg: COLORS.accentSoft, color: COLORS.accent, border: COLORS.accentBorder },
-  "in-lavorazione": { bg: COLORS.blueSoft,   color: COLORS.blue,   border: "rgba(61,100,180,0.2)" },
-  completato:       { bg: COLORS.greenSoft,  color: COLORS.green,  border: COLORS.greenBorder },
-};
-const statusLabel: Record<string, string> = {
-  nuovo: "Nuovo", "in-lavorazione": "In lavorazione", completato: "Completato",
-};
-
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatRelative(iso: string): string {
@@ -48,24 +39,6 @@ function formatRelative(iso: string): string {
   const days = Math.floor(h / 24);
   if (days < 7) return `${days} ${days === 1 ? "giorno" : "giorni"} fa`;
   return d.toLocaleDateString("it-IT", { day: "2-digit", month: "short" });
-}
-
-function ordersByMonth(ordini: Ordine[], months: number): { label: string; value: number; key: string }[] {
-  const buckets: { label: string; value: number; key: string }[] = [];
-  const now = new Date();
-  for (let i = months - 1; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const key = `${d.getFullYear()}-${d.getMonth()}`;
-    const label = d.toLocaleDateString("it-IT", { month: "short" }).replace(".", "");
-    buckets.push({ label, value: 0, key });
-  }
-  for (const o of ordini) {
-    const d = new Date(o.created_at);
-    const key = `${d.getFullYear()}-${d.getMonth()}`;
-    const b = buckets.find((x) => x.key === key);
-    if (b) b.value += 1;
-  }
-  return buckets;
 }
 
 // ── Sub-components ───────────────────────────────────────────────────────────
@@ -105,62 +78,6 @@ function StatCard({
         <p style={{ fontFamily: FONT_BODY, fontSize: "0.7rem", color: "rgba(26,21,16,0.4)" }}>{sub}</p>
       )}
     </div>
-  );
-}
-
-function OrdersSparkline({ ordini }: { ordini: Ordine[] }) {
-  const data = ordersByMonth(ordini, 6);
-  const max = Math.max(1, ...data.map((d) => d.value));
-  const W = 100, H = 38, P = 2;
-  const step = (W - P * 2) / (data.length - 1 || 1);
-  const points = data.map((d, i) => {
-    const x = P + i * step;
-    const y = H - P - ((d.value / max) * (H - P * 2));
-    return [x, y] as const;
-  });
-  const linePath = points.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
-  const areaPath = `${linePath} L${(W - P).toFixed(1)},${H - P} L${P},${H - P} Z`;
-
-  return (
-    <Card>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "1rem" }}>
-        <div>
-          <p style={{ fontFamily: FONT_BODY, fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,21,16,0.45)", marginBottom: "0.3rem" }}>
-            Andamento ordini
-          </p>
-          <p style={{ fontFamily: FONT_DISPLAY, fontSize: "1.6rem", fontWeight: 300, color: COLORS.ink, lineHeight: 1 }}>
-            {ordini.length} <span style={{ fontSize: "0.78rem", color: "rgba(26,21,16,0.4)" }}>totali</span>
-          </p>
-        </div>
-        <p style={{ fontFamily: FONT_BODY, fontSize: "0.65rem", color: "rgba(26,21,16,0.4)" }}>
-          Ultimi 6 mesi
-        </p>
-      </div>
-
-      <div style={{ width: "100%", aspectRatio: "100 / 38" }}>
-        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: "100%", height: "100%", display: "block" }}>
-          <defs>
-            <linearGradient id="orderArea" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={COLORS.accent} stopOpacity="0.22" />
-              <stop offset="100%" stopColor={COLORS.accent} stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <path d={areaPath} fill="url(#orderArea)" />
-          <path d={linePath} fill="none" stroke={COLORS.accent} strokeWidth={0.8} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-          {points.map(([x, y], i) => (
-            <circle key={i} cx={x} cy={y} r={0.9} fill={COLORS.surface} stroke={COLORS.accent} strokeWidth={0.5} vectorEffect="non-scaling-stroke" />
-          ))}
-        </svg>
-      </div>
-
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.5rem" }}>
-        {data.map((d) => (
-          <p key={d.key + d.label} style={{ fontFamily: FONT_BODY, fontSize: "0.6rem", color: "rgba(26,21,16,0.35)" }}>
-            {d.label}
-          </p>
-        ))}
-      </div>
-    </Card>
   );
 }
 
@@ -237,7 +154,7 @@ function AvailabilityDonut({
 
 type ActivityItem = {
   id: string;
-  type: "ordine" | "messaggio";
+  type: "messaggio";
   title: string;
   subtitle: string;
   date: string;
@@ -245,18 +162,9 @@ type ActivityItem = {
   highlight: boolean;
 };
 
-function ActivityTimeline({ ordini, messaggi }: { ordini: Ordine[]; messaggi: Messaggio[] }) {
-  const items: ActivityItem[] = [
-    ...ordini.map<ActivityItem>((o) => ({
-      id: `o-${o.id}`,
-      type: "ordine",
-      title: o.nome,
-      subtitle: o.scena,
-      date: o.created_at,
-      href: "/admin/ordini",
-      highlight: o.status === "nuovo",
-    })),
-    ...messaggi.map<ActivityItem>((m) => ({
+function ActivityTimeline({ messaggi }: { messaggi: Messaggio[] }) {
+  const items: ActivityItem[] = messaggi
+    .map<ActivityItem>((m) => ({
       id: `m-${m.id}`,
       type: "messaggio",
       title: m.nome,
@@ -264,8 +172,7 @@ function ActivityTimeline({ ordini, messaggi }: { ordini: Ordine[]; messaggi: Me
       date: m.created_at,
       href: "/admin/messaggi",
       highlight: !m.letto,
-    })),
-  ]
+    }))
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 6);
 
@@ -273,13 +180,13 @@ function ActivityTimeline({ ordini, messaggi }: { ordini: Ordine[]; messaggi: Me
     <Card padding="1.2rem 0">
       <div style={{ padding: "0 1.4rem", marginBottom: "1rem" }}>
         <p style={{ fontFamily: FONT_BODY, fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,21,16,0.45)" }}>
-          Attività recenti
+          Messaggi recenti
         </p>
       </div>
 
       {items.length === 0 ? (
         <p style={{ padding: "0 1.4rem 0.5rem", fontFamily: FONT_BODY, fontSize: "0.78rem", color: "rgba(26,21,16,0.4)" }}>
-          Nessuna attività ancora.
+          Nessun messaggio ancora.
         </p>
       ) : (
         <div>
@@ -301,23 +208,15 @@ function ActivityTimeline({ ordini, messaggi }: { ordini: Ordine[]; messaggi: Me
                 color: it.highlight ? COLORS.accent : COLORS.stone,
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                {it.type === "ordine" ? (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 4h2l2.5 12.5a2 2 0 0 0 2 1.5h8a2 2 0 0 0 2-1.5L21 8H6" />
-                    <circle cx="10" cy="20.5" r="1.2" />
-                    <circle cx="17" cy="20.5" r="1.2" />
-                  </svg>
-                ) : (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="5" width="18" height="14" rx="2" />
-                    <path d="m3 7 9 6 9-6" />
-                  </svg>
-                )}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="5" width="18" height="14" rx="2" />
+                  <path d="m3 7 9 6 9-6" />
+                </svg>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: "0.6rem", marginBottom: "0.15rem" }}>
                   <p style={{ fontFamily: FONT_BODY, fontSize: "0.82rem", color: COLORS.ink, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {it.type === "ordine" ? "Nuovo ordine — " : "Messaggio — "}{it.title}
+                    Messaggio — {it.title}
                   </p>
                   <p style={{ fontFamily: FONT_BODY, fontSize: "0.7rem", color: "rgba(26,21,16,0.35)", whiteSpace: "nowrap" }}>
                     {formatRelative(it.date)}
@@ -335,66 +234,11 @@ function ActivityTimeline({ ordini, messaggi }: { ordini: Ordine[]; messaggi: Me
   );
 }
 
-function RecentOrdersTable({ ordini }: { ordini: Ordine[] }) {
-  const recent = ordini.slice(0, 5);
-  return (
-    <Card padding="1.2rem 0">
-      <div style={{ padding: "0 1.4rem", marginBottom: "1rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <p style={{ fontFamily: FONT_BODY, fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,21,16,0.45)" }}>
-          Ultimi ordini
-        </p>
-        <Link href="/admin/ordini" style={{ fontFamily: FONT_BODY, fontSize: "0.6rem", letterSpacing: "0.14em", textTransform: "uppercase", color: COLORS.accent, textDecoration: "none" }}>
-          Tutti →
-        </Link>
-      </div>
-
-      {recent.length === 0 ? (
-        <p style={{ padding: "0 1.4rem 0.5rem", fontFamily: FONT_BODY, fontSize: "0.78rem", color: "rgba(26,21,16,0.4)" }}>
-          Nessun ordine ricevuto.
-        </p>
-      ) : (
-        <div>
-          {recent.map((o, i) => {
-            const sc = statusColor[o.status] ?? statusColor.completato;
-            return (
-              <div
-                key={o.id}
-                style={{
-                  padding: "0.8rem 1.4rem",
-                  borderBottom: i < recent.length - 1 ? `1px solid ${COLORS.borderSoft}` : "none",
-                  display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.8rem",
-                }}
-              >
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <p style={{ fontFamily: FONT_BODY, fontSize: "0.82rem", color: COLORS.ink, fontWeight: 500, marginBottom: "0.15rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {o.nome}
-                  </p>
-                  <p style={{ fontFamily: FONT_BODY, fontSize: "0.7rem", color: COLORS.stone, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {o.scena}
-                  </p>
-                </div>
-                <span style={{
-                  fontFamily: FONT_BODY, fontSize: "0.55rem", letterSpacing: "0.12em", textTransform: "uppercase",
-                  padding: "3px 8px", background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`,
-                  whiteSpace: "nowrap",
-                }}>
-                  {statusLabel[o.status]}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </Card>
-  );
-}
-
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function AdminDashboard() {
-  const [opere, ordini, messaggi] = await Promise.all([
+  const [opere, messaggi] = await Promise.all([
     getOpere().catch(() => []),
-    getOrdini().catch(() => []),
     getMessaggi().catch(() => []),
   ]);
 
@@ -402,7 +246,6 @@ export default async function AdminDashboard() {
   const vendute     = opere.filter((o) => o.disponibilita === "venduta").length;
   const riservate   = opere.filter((o) => o.disponibilita === "riservata").length;
   const nonInVend   = opere.filter((o) => o.disponibilita === "non_in_vendita").length;
-  const nuoviOrdini = ordini.filter((o) => o.status === "nuovo").length;
   const nonLetti    = messaggi.filter((m) => !m.letto).length;
   const valoreDisp  = opere.filter((o) => o.disponibilita === "disponibile").reduce((s, o) => s + (o.prezzo ?? 0), 0);
   const totalViews  = opere.reduce((s, o) => s + (o.visualizzazioni ?? 0), 0);
@@ -446,19 +289,6 @@ export default async function AdminDashboard() {
           }
         />
         <StatCard
-          label="Nuovi ordini"
-          value={nuoviOrdini}
-          accent={nuoviOrdini > 0}
-          sub={`${ordini.length} totali`}
-          icon={
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 4h2l2.5 12.5a2 2 0 0 0 2 1.5h8a2 2 0 0 0 2-1.5L21 8H6" />
-              <circle cx="10" cy="20.5" r="1.2" />
-              <circle cx="17" cy="20.5" r="1.2" />
-            </svg>
-          }
-        />
-        <StatCard
           label="Messaggi non letti"
           value={nonLetti}
           accent={nonLetti > 0}
@@ -485,7 +315,6 @@ export default async function AdminDashboard() {
 
       {/* ── Chart row ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1rem", marginBottom: "1.2rem" }}>
-        <OrdersSparkline ordini={ordini} />
         <AvailabilityDonut
           disponibili={disponibili}
           vendute={vendute}
@@ -494,11 +323,8 @@ export default async function AdminDashboard() {
         />
       </div>
 
-      {/* ── Activity + Recent orders ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1rem" }}>
-        <ActivityTimeline ordini={ordini} messaggi={messaggi} />
-        <RecentOrdersTable ordini={ordini} />
-      </div>
+      {/* ── Activity ── */}
+      <ActivityTimeline messaggi={messaggi} />
     </div>
   );
 }
