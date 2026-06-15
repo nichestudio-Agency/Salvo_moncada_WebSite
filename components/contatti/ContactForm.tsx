@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useSearchParams } from 'next/navigation'
 
 const schema = z.object({
   nome:      z.string().min(1, 'Campo obbligatorio'),
@@ -92,11 +93,14 @@ function buildWhatsAppUrl(data: FormData) {
   return `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(lines)}`
 }
 
-export default function ContactForm() {
+export default function ContactForm({ opere = [] }: { opere?: string[] }) {
   const [status, setStatus] = useState<Status>('idle')
+  const searchParams = useSearchParams()
+  const operaPreselezionata = searchParams.get('opera') ?? ''
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
+    defaultValues: { opera: operaPreselezionata },
   })
 
   const onSubmitWhatsApp = handleSubmit((data) => {
@@ -210,11 +214,24 @@ export default function ContactForm() {
 
       {/* Opera */}
       <Field label="Opera di riferimento" optional>
-        <input
-          id="opera" type="text" placeholder="Titolo dell'opera"
-          {...register('opera')}
-          className={inputClass}
-        />
+        {opere.length > 0 ? (
+          <select
+            id="opera"
+            {...register('opera')}
+            className={[inputClass, 'cursor-pointer bg-transparent'].join(' ')}
+          >
+            <option value="">— Nessuna opera specifica —</option>
+            {opere.map((titolo) => (
+              <option key={titolo} value={titolo}>{titolo}</option>
+            ))}
+          </select>
+        ) : (
+          <input
+            id="opera" type="text" placeholder="Titolo dell'opera"
+            {...register('opera')}
+            className={inputClass}
+          />
+        )}
       </Field>
 
       {/* Messaggio */}

@@ -1,13 +1,16 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
+import { Suspense } from 'react'
 import ContactForm from '@/components/contatti/ContactForm'
+import { getOpereTitoli } from '@/lib/supabase/db'
 
 export const metadata: Metadata = {
   title: 'Contatti | Salvo Moncada',
   description: 'Contatta Salvo Moncada per informazioni sulle opere, commissioni personalizzate o collaborazioni.',
 }
 
-export default function ContattiPage() {
+export default async function ContattiPage() {
+  const opere = await getOpereTitoli().catch(() => [])
   return (
     <main className="min-h-screen bg-cream lg:flex">
 
@@ -131,7 +134,9 @@ export default function ContattiPage() {
           <h2 className="mb-10 font-display text-[clamp(1.8rem,3vw,2.6rem)] font-black tracking-[-0.04em] text-ink leading-none">
             Invia un messaggio
           </h2>
-          <ContactForm />
+          <Suspense fallback={null}>
+            <ContactForm opere={opere.map((o) => o.titolo)} />
+          </Suspense>
         </div>
       </div>
 

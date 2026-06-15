@@ -75,6 +75,14 @@ export async function getSlugs(): Promise<string[]> {
   return (data ?? []).map((r) => r.slug as string)
 }
 
+export async function getOpereTitoli(): Promise<{ titolo: string }[]> {
+  const { data } = await supabase
+    .from('opere')
+    .select('titolo')
+    .order('titolo', { ascending: true })
+  return (data ?? []) as { titolo: string }[]
+}
+
 export async function getOpereInEvidenza(): Promise<Opera[]> {
   const { data } = await supabase
     .from('opere')
