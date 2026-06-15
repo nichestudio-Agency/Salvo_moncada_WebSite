@@ -8,12 +8,20 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const schema = z.object({
   nome:      z.string().min(2, 'Inserisci almeno 2 caratteri'),
-  email:     z.string().email({ error: 'Email non valida' }),
+  cognome:   z.string().min(2, 'Inserisci almeno 2 caratteri'),
+  email:     z.string().optional().or(z.literal('')),
+  telefono:  z.string().optional().or(z.literal('')),
   oggetto:   z.string().min(1, 'Seleziona un oggetto'),
   opera:     z.string().optional(),
   messaggio: z.string().min(20, 'Il messaggio deve essere di almeno 20 caratteri'),
   privacy:   z.literal(true, { error: 'Accetta la privacy per continuare' }),
-})
+}).refine(
+  (d) => (d.email && d.email.length > 0) || (d.telefono && d.telefono.length > 0),
+  { message: 'Inserisci almeno email o numero di telefono', path: ['email'] }
+).refine(
+  (d) => !d.email || d.email.length === 0 || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email),
+  { message: 'Email non valida', path: ['email'] }
+)
 
 type FormData = z.infer<typeof schema>
 type Status = 'idle' | 'loading' | 'success' | 'error'
@@ -26,11 +34,13 @@ const oggetti = [
 
 function Field({
   label,
+  required,
   optional,
   error,
   children,
 }: {
   label: string
+  required?: boolean
   optional?: boolean
   error?: string
   children: React.ReactNode
@@ -39,6 +49,7 @@ function Field({
     <div className="group flex flex-col gap-0">
       <label className="mb-2 font-sans text-[0.58rem] font-semibold uppercase tracking-[0.26em] text-charcoal/45">
         {label}
+        {required && <span className="ml-0.5 text-coral">*</span>}
         {optional && <span className="ml-1.5 normal-case tracking-normal text-charcoal/30">— opzionale</span>}
       </label>
       {children}
@@ -68,8 +79,11 @@ const inputErrorClass = 'border-rose-400'
 const WA_NUMBER = '393404143319'
 
 function buildWhatsAppUrl(data: FormData) {
+  const contatto = data.email && data.email.length > 0
+    ? data.email
+    : data.telefono ?? ''
   const lines = [
-    `Ciao Salvo, sono ${data.nome} (${data.email}).`,
+    `Ciao Salvo, sono ${data.nome} ${data.cognome} (${contatto}).`,
     `Oggetto: ${data.oggetto}`,
     data.opera ? `Opera: ${data.opera}` : null,
     '',
@@ -128,26 +142,50 @@ export default function ContactForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-8">
 
-      {/* Nome + Email */}
+      {/* Nome + Cognome */}
       <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
-        <Field label="Nome" error={errors.nome?.message}>
+        <Field label="Nome" required error={errors.nome?.message}>
           <input
             id="nome" type="text" placeholder="Il tuo nome"
             {...register('nome')}
             className={[inputClass, errors.nome ? inputErrorClass : ''].join(' ')}
           />
         </Field>
-        <Field label="Email" error={errors.email?.message}>
+        <Field label="Cognome" required error={errors.cognome?.message}>
+          <input
+            id="cognome" type="text" placeholder="Il tuo cognome"
+            {...register('cognome')}
+            className={[inputClass, errors.cognome ? inputErrorClass : ''].join(' ')}
+          />
+        </Field>
+      </div>
+
+      {/* Email + Telefono (almeno uno) */}
+      <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
+        <Field
+          label="Email"
+          error={errors.email?.message}
+        >
           <input
             id="email" type="email" placeholder="La tua email"
             {...register('email')}
             className={[inputClass, errors.email ? inputErrorClass : ''].join(' ')}
           />
         </Field>
+        <Field label="Telefono">
+          <input
+            id="telefono" type="tel" placeholder="Il tuo numero"
+            {...register('telefono')}
+            className={inputClass}
+          />
+        </Field>
       </div>
+      <p className="font-sans text-[0.58rem] text-charcoal/35 -mt-5">
+        * Inserisci almeno email o telefono
+      </p>
 
       {/* Oggetto */}
-      <Field label="Oggetto" error={errors.oggetto?.message}>
+      <Field label="Oggetto" required error={errors.oggetto?.message}>
         <select
           id="oggetto"
           {...register('oggetto')}
@@ -168,7 +206,7 @@ export default function ContactForm() {
       </Field>
 
       {/* Messaggio */}
-      <Field label="Messaggio" error={errors.messaggio?.message}>
+      <Field label="Messaggio" required error={errors.messaggio?.message}>
         <textarea
           id="messaggio" rows={5}
           placeholder="Scrivi qui il tuo messaggio..."
