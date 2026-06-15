@@ -47,7 +47,7 @@ export default function Footer() {
             </Link>
 
             <p className="max-w-[260px] font-body text-sm leading-relaxed text-ivory/45">
-              Tegole antiche trasformate in storie di vita siciliana. Ogni opera è unica, dipinta a mano.
+              Tegole antiche trasformate in storie di vita siciliana. Ogni opera è unica, realizzata a mano.
             </p>
 
             <div className="flex items-center gap-4">
