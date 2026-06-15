@@ -99,21 +99,18 @@ export default function NuovaOperaForm({ categorie }: { categorie: Categoria[] }
           </div>
 
           <div style={{ gridColumn: "1 / -1", borderTop: "1px solid rgba(26,21,16,0.08)", paddingTop: "1rem" }}>
-            <label style={labelStyle}>Immagine</label>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-              <div>
-                <label style={{ ...labelStyle, fontSize: "0.55rem", color: "rgba(26,21,16,0.3)" }} htmlFor="immagine_file">
-                  Carica file (JPG, PNG, WEBP)
-                </label>
-                <input id="immagine_file" name="immagine_file" type="file" accept="image/*" style={{ ...inputStyle, padding: "0.5rem 0.9rem" }} />
-              </div>
-              <div>
-                <label style={{ ...labelStyle, fontSize: "0.55rem", color: "rgba(26,21,16,0.3)" }} htmlFor="immagine_url">
-                  Oppure incolla un URL
-                </label>
-                <input id="immagine_url" name="immagine_url" style={inputStyle} placeholder="https://..." />
-              </div>
-            </div>
+            <label style={labelStyle}>Foto (puoi selezionare più file)</label>
+            <input
+              id="immagine_files"
+              name="immagine_files"
+              type="file"
+              accept="image/*"
+              multiple
+              style={{ ...inputStyle, padding: "0.5rem 0.9rem" }}
+            />
+            <p style={{ fontFamily: "var(--font-inter)", fontSize: "0.62rem", color: "rgba(26,21,16,0.35)", marginTop: "0.4rem" }}>
+              JPG, PNG, WEBP — tieni premuto Ctrl (o ⌘) per selezionare più foto
+            </p>
           </div>
         </div>
 

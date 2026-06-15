@@ -77,13 +77,13 @@ export async function createArtwork(
   const slug = slugify(titolo)
 
   try {
-    // Gestione immagine: upload file oppure URL manuale
-    let immagineUrl = (formData.get("immagine_url") as string)?.trim() || ""
-    const file = formData.get("immagine_file") as File | null
-    if (file && file.size > 0) {
-      const uploaded = await uploadImmagine(file, slug)
-      if (uploaded) immagineUrl = uploaded
-    }
+    // Upload di tutti i file selezionati
+    const files = formData.getAll("immagine_files") as File[]
+    const uploaded = (
+      await Promise.all(
+        files.filter((f) => f.size > 0).map((f) => uploadImmagine(f, slug))
+      )
+    ).filter(Boolean) as string[]
 
     await insertOpera({
       slug,
@@ -96,7 +96,7 @@ export async function createArtwork(
       categoria:     (formData.get("categoria")    as string) ?? "paesaggio",
       disponibilita: ((formData.get("disponibilita") as string) ?? "disponibile") as Disponibilita,
       prezzo:       (formData.get("prezzo") as string) ? parseInt(formData.get("prezzo") as string) : null,
-      immagini:     immagineUrl ? [immagineUrl] : [],
+      immagini:     uploaded,
       in_evidenza:  formData.get("in_evidenza") === "true",
     })
   } catch (e: unknown) {
@@ -119,12 +119,15 @@ export async function updateArtwork(
   formData: FormData
 ): Promise<{ error?: string }> {
   try {
-    let immagineUrl = (formData.get("immagine_url") as string)?.trim() || ""
-    const file = formData.get("immagine_file") as File | null
-    if (file && file.size > 0) {
-      const uploaded = await uploadImmagine(file, slug)
-      if (uploaded) immagineUrl = uploaded
-    }
+    // Immagini esistenti da mantenere + nuovi upload
+    const existing = formData.getAll("immagine_existing") as string[]
+    const files = formData.getAll("immagine_files") as File[]
+    const newUploads = (
+      await Promise.all(
+        files.filter((f) => f.size > 0).map((f) => uploadImmagine(f, slug))
+      )
+    ).filter(Boolean) as string[]
+    const immagini = [...existing, ...newUploads]
 
     await updateOpera(slug, {
       titolo:       (formData.get("titolo")       as string)?.trim(),
@@ -136,7 +139,7 @@ export async function updateArtwork(
       categoria:    (formData.get("categoria")    as string) ?? "paesaggio",
       disponibilita: ((formData.get("disponibilita") as string) ?? "disponibile") as Disponibilita,
       prezzo:       (formData.get("prezzo") as string) ? parseInt(formData.get("prezzo") as string) : null,
-      ...(immagineUrl ? { immagini: [immagineUrl] } : {}),
+      immagini,
       in_evidenza:  formData.get("in_evidenza") === "true",
     })
   } catch (e: unknown) {

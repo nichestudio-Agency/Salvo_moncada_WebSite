@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { updateArtwork } from "@/lib/actions";
 import type { Opera, Categoria } from "@/types/db";
@@ -18,6 +18,13 @@ const labelStyle: React.CSSProperties = {
 export default function EditArtworkForm({ opera, categorie }: { opera: Opera; categorie: Categoria[] }) {
   const boundAction = updateArtwork.bind(null, opera.slug);
   const [state, formAction, pending] = useActionState(boundAction, null);
+
+  // Immagini esistenti che l'utente vuole mantenere
+  const [keptImages, setKeptImages] = useState<string[]>(opera.immagini);
+
+  function removeImage(url: string) {
+    setKeptImages((prev) => prev.filter((u) => u !== url));
+  }
 
   return (
     <div style={{ maxWidth: 680 }}>
@@ -39,6 +46,11 @@ export default function EditArtworkForm({ opera, categorie }: { opera: Opera; ca
             {state.error}
           </p>
         )}
+
+        {/* Hidden inputs per le immagini da mantenere */}
+        {keptImages.map((url) => (
+          <input key={url} type="hidden" name="immagine_existing" value={url} />
+        ))}
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
           <div style={{ gridColumn: "1 / -1" }}>
@@ -83,7 +95,7 @@ export default function EditArtworkForm({ opera, categorie }: { opera: Opera; ca
           </div>
           <div>
             <label style={labelStyle} htmlFor="prezzo">Prezzo (€)</label>
-            <input id="prezzo" name="prezzo" type="number" min={0} defaultValue={opera.prezzo ?? ""} style={inputStyle} placeholder="Vuoto = nessun prezzo" />
+            <input id="prezzo" name="prezzo" type="number" min={0} defaultValue={opera.prezzo ?? ""} placeholder="Vuoto = nessun prezzo" style={inputStyle} />
           </div>
           <div>
             <label style={labelStyle} htmlFor="disponibilita">Disponibilità</label>
@@ -102,32 +114,71 @@ export default function EditArtworkForm({ opera, categorie }: { opera: Opera; ca
             </select>
           </div>
 
-          {/* Immagine attuale */}
-          {opera.immagini[0] && (
-            <div style={{ gridColumn: "1 / -1" }}>
-              <p style={labelStyle}>Immagine attuale</p>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={opera.immagini[0]} alt={opera.titolo} style={{ height: 120, objectFit: "contain", background: "#f0ebe4", padding: 8 }} />
-            </div>
-          )}
-
-          {/* Upload nuova immagine */}
+          {/* Foto esistenti */}
           <div style={{ gridColumn: "1 / -1", borderTop: "1px solid rgba(26,21,16,0.08)", paddingTop: "1rem" }}>
-            <label style={labelStyle}>Sostituisci immagine</label>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-              <div>
-                <label style={{ ...labelStyle, fontSize: "0.55rem", color: "rgba(26,21,16,0.3)" }} htmlFor="immagine_file">
-                  Carica file (JPG, PNG, WEBP)
-                </label>
-                <input id="immagine_file" name="immagine_file" type="file" accept="image/*" style={{ ...inputStyle, padding: "0.5rem 0.9rem" }} />
+            <p style={labelStyle}>Foto attuali {opera.immagini.length > 0 && `(${keptImages.length}/${opera.immagini.length})`}</p>
+
+            {opera.immagini.length === 0 ? (
+              <p style={{ fontFamily: "var(--font-inter)", fontSize: "0.75rem", color: "rgba(26,21,16,0.35)" }}>Nessuna foto caricata.</p>
+            ) : (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem" }}>
+                {opera.immagini.map((url, i) => {
+                  const kept = keptImages.includes(url);
+                  return (
+                    <div key={url} style={{ position: "relative", opacity: kept ? 1 : 0.35 }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={url}
+                        alt={`Foto ${i + 1}`}
+                        style={{ width: 100, height: 100, objectFit: "cover", background: "#f0ebe4", display: "block" }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => kept ? removeImage(url) : setKeptImages((p) => [...p, url])}
+                        title={kept ? "Rimuovi" : "Ripristina"}
+                        style={{
+                          position: "absolute", top: 4, right: 4,
+                          width: 22, height: 22,
+                          background: kept ? "rgba(185,64,64,0.85)" : "rgba(61,122,69,0.85)",
+                          color: "#fff", border: "none", cursor: "pointer",
+                          fontFamily: "var(--font-inter)", fontSize: "0.7rem", lineHeight: 1,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}
+                      >
+                        {kept ? "×" : "↺"}
+                      </button>
+                      {i === 0 && kept && (
+                        <span style={{ position: "absolute", bottom: 0, left: 0, right: 0, textAlign: "center", fontFamily: "var(--font-inter)", fontSize: "0.5rem", letterSpacing: "0.1em", textTransform: "uppercase", background: "rgba(196,120,58,0.85)", color: "#fff", padding: "2px 0" }}>
+                          Copertina
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-              <div>
-                <label style={{ ...labelStyle, fontSize: "0.55rem", color: "rgba(26,21,16,0.3)" }} htmlFor="immagine_url">
-                  Oppure incolla un URL
-                </label>
-                <input id="immagine_url" name="immagine_url" defaultValue={opera.immagini[0] ?? ""} style={inputStyle} placeholder="https://..." />
-              </div>
-            </div>
+            )}
+
+            {keptImages.length === 0 && opera.immagini.length > 0 && (
+              <p style={{ fontFamily: "var(--font-inter)", fontSize: "0.72rem", color: "#b94040", marginTop: "0.5rem" }}>
+                Tutte le foto verranno rimosse al salvataggio.
+              </p>
+            )}
+          </div>
+
+          {/* Aggiungi nuove foto */}
+          <div style={{ gridColumn: "1 / -1" }}>
+            <label style={labelStyle} htmlFor="immagine_files">Aggiungi foto (puoi selezionarne più di una)</label>
+            <input
+              id="immagine_files"
+              name="immagine_files"
+              type="file"
+              accept="image/*"
+              multiple
+              style={{ ...inputStyle, padding: "0.5rem 0.9rem" }}
+            />
+            <p style={{ fontFamily: "var(--font-inter)", fontSize: "0.62rem", color: "rgba(26,21,16,0.35)", marginTop: "0.4rem" }}>
+              JPG, PNG, WEBP — tieni premuto Ctrl (o ⌘) per selezionare più foto
+            </p>
           </div>
         </div>
 
