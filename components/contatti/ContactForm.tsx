@@ -7,17 +7,17 @@ import { z } from 'zod'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const schema = z.object({
-  nome:      z.string().min(2, 'Inserisci almeno 2 caratteri'),
-  cognome:   z.string().min(2, 'Inserisci almeno 2 caratteri'),
+  nome:      z.string().min(1, 'Campo obbligatorio'),
+  cognome:   z.string().min(1, 'Campo obbligatorio'),
   email:     z.string().optional().or(z.literal('')),
   telefono:  z.string().optional().or(z.literal('')),
   oggetto:   z.string().min(1, 'Seleziona un oggetto'),
   opera:     z.string().optional(),
-  messaggio: z.string().min(20, 'Il messaggio deve essere di almeno 20 caratteri'),
+  messaggio: z.string().min(1, 'Campo obbligatorio'),
   privacy:   z.literal(true, { error: 'Accetta la privacy per continuare' }),
 }).refine(
   (d) => (d.email && d.email.length > 0) || (d.telefono && d.telefono.length > 0),
-  { message: 'Inserisci almeno email o numero di telefono', path: ['email'] }
+  { message: 'Inserisci almeno email o numero di telefono', path: ['_contactRequired'] }
 ).refine(
   (d) => !d.email || d.email.length === 0 || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email),
   { message: 'Email non valida', path: ['email'] }
@@ -161,28 +161,40 @@ export default function ContactForm() {
       </div>
 
       {/* Email + Telefono (almeno uno) */}
-      <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
-        <Field
-          label="Email"
-          error={errors.email?.message}
-        >
-          <input
-            id="email" type="email" placeholder="La tua email"
-            {...register('email')}
-            className={[inputClass, errors.email ? inputErrorClass : ''].join(' ')}
-          />
-        </Field>
-        <Field label="Telefono">
-          <input
-            id="telefono" type="tel" placeholder="Il tuo numero"
-            {...register('telefono')}
-            className={inputClass}
-          />
-        </Field>
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <p className="font-sans text-[0.58rem] font-semibold uppercase tracking-[0.26em] text-charcoal/45">
+            Contatto
+          </p>
+          <span className="text-coral text-[0.58rem] font-semibold">*</span>
+          <span className="font-sans text-[0.58rem] text-charcoal/40">— almeno uno obbligatorio</span>
+        </div>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <Field label="Email" error={errors.email?.message}>
+            <input
+              id="email" type="email" placeholder="La tua email"
+              {...register('email')}
+              className={[inputClass, errors.email ? inputErrorClass : ''].join(' ')}
+            />
+          </Field>
+          <Field label="Telefono">
+            <input
+              id="telefono" type="tel" placeholder="Il tuo numero"
+              {...register('telefono')}
+              className={inputClass}
+            />
+          </Field>
+        </div>
+        {(errors as Record<string, { message?: string }>)._contactRequired && (
+          <motion.p
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="font-sans text-[0.65rem] text-rose-500"
+          >
+            {(errors as Record<string, { message?: string }>)._contactRequired.message}
+          </motion.p>
+        )}
       </div>
-      <p className="font-sans text-[0.58rem] text-charcoal/35 -mt-5">
-        * Inserisci almeno email o telefono
-      </p>
 
       {/* Oggetto */}
       <Field label="Oggetto" required error={errors.oggetto?.message}>
