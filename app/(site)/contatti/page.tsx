@@ -66,14 +66,6 @@ export default function ContattiPage() {
             </div>
 
             <div className="border-t border-ivory/10 pt-6">
-              <p className="mb-1.5 font-sans text-[0.55rem] font-semibold uppercase tracking-[0.28em] text-ivory/30">
-                Studio
-              </p>
-              <p className="font-body text-base text-ivory/70">Sicilia, Italia</p>
-              <p className="mt-0.5 font-sans text-[0.65rem] text-ivory/35">Su appuntamento</p>
-            </div>
-
-            <div className="border-t border-ivory/10 pt-6">
               <p className="mb-3 font-sans text-[0.55rem] font-semibold uppercase tracking-[0.28em] text-ivory/30">
                 Scrivimi direttamente
               </p>

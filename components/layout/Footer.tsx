@@ -91,9 +91,7 @@ export default function Footer() {
                   moncadasalvo71@gmail.com
                 </a>
               </li>
-              <li>
-                <span className="font-sans text-sm text-ivory/35">Sicilia, Italia</span>
-              </li>
+
               <li>
                 <a href="https://instagram.com/salvomoncada" target="_blank" rel="noopener noreferrer"
                   className="font-sans text-sm text-ivory/45 transition-colors duration-200 hover:text-gold">

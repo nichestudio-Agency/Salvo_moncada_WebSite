@@ -88,7 +88,7 @@ export default function AboutTeaser() {
           >
             {[
               { num: "200+", label: "Tegole create" },
-              { num: "Catania", label: "Sicilia, Italia" },
+              { num: "Unico", label: "Ogni pezzo" },
               { num: "100%", label: "Fatto a mano" },
             ].map(({ num, label }) => (
               <div key={label}>
