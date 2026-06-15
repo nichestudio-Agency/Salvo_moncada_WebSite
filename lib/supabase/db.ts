@@ -41,6 +41,21 @@ export async function getOperaBySlug(slug: string): Promise<Opera | null> {
   return data ? (normalizeOpera(data) as Opera) : null
 }
 
+export async function getOpereCorrelate(excludeSlug: string, limit = 3): Promise<Opera[]> {
+  const { data } = await supabase
+    .from('opere')
+    .select('id,slug,titolo,tecnica,anno,disponibilita,immagini,prezzo')
+    .neq('slug', excludeSlug)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  return (data ?? []).map(normalizeOpera) as Opera[]
+}
+
+export async function getSlugs(): Promise<string[]> {
+  const { data } = await supabase.from('opere').select('slug')
+  return (data ?? []).map((r) => r.slug as string)
+}
+
 export async function getOpereInEvidenza(): Promise<Opera[]> {
   const { data } = await supabase
     .from('opere')

@@ -42,3 +42,4 @@ next-env.d.ts
 
 # dati sensibili (ordini clienti - non committare)
 /data/orders.json
+.claude/

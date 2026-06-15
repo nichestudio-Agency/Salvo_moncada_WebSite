@@ -2,12 +2,17 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { getOperaBySlug, getOpere } from '@/lib/supabase/db'
+import { getOperaBySlug, getOpereCorrelate, getSlugs } from '@/lib/supabase/db'
 import type { Opera } from '@/types/db'
 import OperaImageGallery from '@/components/artwork/OperaImageGallery'
 import ViewTracker from '@/components/artwork/ViewTracker'
 
 export const revalidate = 3600
+
+export async function generateStaticParams() {
+  const slugs = await getSlugs().catch(() => [])
+  return slugs.map((slug) => ({ slug }))
+}
 
 type PageProps = { params: Promise<{ slug: string }> }
 
@@ -111,8 +116,8 @@ function OperaInfoPanel({ opera }: { opera: Opera }) {
 
 // ── Opere correlate ──────────────────────────────────────────────────────────
 
-function OpereCorrelate({ currentSlug, opere }: { currentSlug: string; opere: Opera[] }) {
-  const mostrate = opere.filter(op => op.slug !== currentSlug).slice(0, 3)
+function OpereCorrelate({ opere }: { opere: Opera[] }) {
+  const mostrate = opere.slice(0, 3)
   if (mostrate.length === 0) return null
 
   return (
@@ -187,7 +192,7 @@ export default async function OperaDetailPage({ params }: PageProps) {
 
   const [opera, altreOpere] = await Promise.all([
     getOperaBySlug(slug),
-    getOpere().catch(() => []),
+    getOpereCorrelate(slug, 3).catch(() => []),
   ])
 
   if (!opera) notFound()
@@ -227,7 +232,7 @@ export default async function OperaDetailPage({ params }: PageProps) {
         </div>
       </div>
 
-      <OpereCorrelate currentSlug={slug} opere={altreOpere} />
+      <OpereCorrelate opere={altreOpere} />
 
     </main>
   )
